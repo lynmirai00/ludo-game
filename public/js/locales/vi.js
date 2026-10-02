@@ -1,0 +1,72 @@
+// Vietnamese. Keys must match en.js exactly. Plurals only use `other`.
+export default {
+  app: {
+    title: 'Cờ cá ngựa',
+  },
+  lang: {
+    label: 'Ngôn ngữ',
+  },
+  game: {
+    roll: 'Gieo xúc xắc',
+    newGame: 'Ván mới',
+    opponents: 'Số đối thủ',
+    bots: { other: '{count} máy' },
+    log: 'Diễn biến',
+  },
+  turn: {
+    self: 'Lượt của bạn',
+    other: 'Lượt của {player}',
+  },
+  hint: {
+    roll: 'Bấm "Gieo xúc xắc" để đi.',
+    move: 'Chọn một quân đang nhấp nháy để đi.',
+    botThinking: '{player} đang suy nghĩ…',
+  },
+  player: {
+    bot: 'Máy {color}',
+  },
+  colors: {
+    red: 'Đỏ',
+    green: 'Xanh lá',
+    yellow: 'Vàng',
+    blue: 'Xanh dương',
+  },
+  events: {
+    rolled: { self: 'Bạn gieo được {value}.', other: '{player} gieo được {value}.' },
+    noMove: { self: 'Bạn không có nước đi nào.', other: '{player} không có nước đi nào.' },
+    enter: { self: 'Bạn ra quân.', other: '{player} ra quân.' },
+    capture: { self: 'Bạn đá quân {color} về chuồng!', other: '{player} đá quân {color} về chuồng!' },
+    goal: { self: 'Bạn đưa một quân về đích.', other: '{player} đưa một quân về đích.' },
+    extraTurn: { self: 'Bạn được đi thêm lượt.', other: '{player} được đi thêm lượt.' },
+    win: { self: 'Bạn đã thắng!', other: '{player} thắng ván này.' },
+  },
+  auth: {
+    login: 'Đăng nhập',
+    logout: 'Đăng xuất',
+    prompt: 'Đăng nhập để lưu thành tích',
+    unreachable: 'Không kết nối được máy chủ đăng nhập, kết quả sẽ không được lưu.',
+  },
+  stats: {
+    wins: { other: '{count}' },
+    games: { other: '{count} ván' },
+    summary: 'Thắng {wins}/{games}',
+  },
+  result: {
+    saved: 'Đã lưu kết quả vào tài khoản của bạn.',
+    notSaved: 'Bạn chưa đăng nhập nên kết quả không được lưu.',
+  },
+  leaderboard: {
+    title: 'Bảng xếp hạng',
+    empty: 'Chưa có ai. Hãy là người đầu tiên!',
+  },
+  admin: {
+    clearLeaderboard: 'Xóa bảng xếp hạng',
+  },
+  errors: {
+    UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.',
+    FORBIDDEN: 'Bạn không có quyền làm việc này.',
+    ILLEGAL_MOVE: 'Nước đi này không hợp lệ.',
+    NETWORK: 'Không kết nối được máy chủ, hãy kiểm tra mạng.',
+    UNKNOWN: 'Đã có lỗi xảy ra, vui lòng thử lại.',
+  },
+};
