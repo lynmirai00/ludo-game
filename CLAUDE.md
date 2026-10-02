@@ -7,6 +7,8 @@ Login is handled by ZITADEL (OpenID Connect). Logged-in players get their result
 and appear on a leaderboard. Guests can still play, but nothing is saved.
 The app is deployed to Vercel.
 
+**When resuming work, read `docs/PROGRESS.md` first** (current status, next step, decisions made), and update it at the end of each phase.
+
 Detailed docs, read these before writing code:
 - `docs/01-game-rules.md`: game rules, board data model, cell coordinates
 - `docs/02-zitadel.md`: ZITADEL login integration, API protection, database, deployment
