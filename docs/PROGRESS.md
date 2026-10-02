@@ -15,7 +15,7 @@ language switching verified in headless Chrome at 375px (title, `<html lang>`, `
 
 ## Next step: Phase 2, ported from branch `phase-2-game`
 The branch `phase-2-game` (commit `853486d`) holds a complete, tested Phase 2 in plain JavaScript on top of the old
-Express skeleton. **It is local only (not pushed) and is the only copy of that work.** Port it instead of rewriting:
+Express skeleton. It is pushed to `origin/phase-2-game` as a backup. Port it instead of rewriting:
 
 | From `phase-2-game` | To |
 |---|---|
@@ -53,4 +53,4 @@ After the port is done and verified, delete the branch (the user wants old branc
 
 ## Open decisions (ask the user)
 - Delete branch `phase-2-game`: the user asked to delete old branches. The merged ones are gone; this one was kept
-  because it is unmerged, unpushed and needed for the Phase 2 port. Recommended: delete it after the port.
+  because it is unmerged and needed for the Phase 2 port. Recommended: after the port, delete it locally and on origin (`git push origin --delete phase-2-game`).
