@@ -10,7 +10,7 @@
 7. **Extra turn:** rolling a 6, or capturing a token, gives the same player another turn.
 8. After a full lap (51 cells) a token turns into its **home column** of 5 colored cells, then the goal.
 9. Reaching the goal requires an **exact roll**. If the roll would overshoot the goal, that token cannot move.
-10. If no token can move, the turn is skipped.
+10. If no token can move, the turn is skipped, even on a 6: the extra turn from a 6 is only earned by actually moving a token.
 11. The first player to get all 4 tokens to the goal wins, and the game ends immediately.
 
 Variants that may be added later must be options that are OFF by default:
@@ -56,17 +56,18 @@ Per-color data:
 
 The center area [6..8, 6..8] is the goal zone.
 
-## Suggested `shared/game.js` API
-```js
+## Suggested `lib/game.ts` API
+```ts
 createGame({ players: [0, 2], options })   // returns the initial state
 legalMoves(state, diceValue)               // token indices the current player can move
 applyRoll(state, diceValue)                // records the roll; auto-skips the turn if no move exists
 applyMove(state, tokenIndex)               // moves a token, handles capture, extra turn, win
 cellOf(color, progress, tokenIndex)        // [row, col] for rendering
 ```
-The state contains at least: `players`, `tokens` (4 colors x 4 tokens), `turn`, `dice`, `phase` (`roll` | `move` | `over`), `winner`, and `events` (a list of events for the game log, e.g. `{ type: 'capture', by, victim }`).
+The state contains at least: `players`, `tokens` (4 colors x 4 tokens), `turn`, `dice`, `phase` (`roll` | `move` | `over`), `winner`, and `events` (a list of events for the game log, e.g. `{ type: 'capture', player, victimColor, victimToken }`; see `docs/04-i18n.md`).
+Export TypeScript types for the state and for each event type (a discriminated union on `type`).
 
-## Bot
+## Bot (`lib/bot.ts`)
 Pick the move with the highest score:
 reach goal (+1000) > capture (+800) > leave base (+500) > enter home column (+300) > land on a safe cell (+100), plus the new progress value.
 Bots act after a 0.7–0.9 second delay so the human can follow along.
