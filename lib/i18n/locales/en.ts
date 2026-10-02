@@ -1,6 +1,6 @@
 // English: the default language and the source of truth for keys.
-// Every key added here must also be added to vi.js and ja.js.
-export default {
+// Every key added here must also be added to vi.ts and ja.ts.
+const en = {
   app: {
     title: 'Ludo',
   },
@@ -72,3 +72,5 @@ export default {
     UNKNOWN: 'Something went wrong. Please try again.',
   },
 };
+
+export default en;

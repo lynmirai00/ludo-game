@@ -14,8 +14,9 @@ Detailed docs, read these before writing code:
 - `docs/04-i18n.md`: multi-language support (English, Vietnamese, Japanese)
 
 ## Tech stack
-- Node.js 20+, TypeScript in `strict` mode
-- Next.js (App Router) for both the UI and the API (route handlers under `app/api/`); no separate backend server
+- Node.js 22.12+ (required by Vitest), TypeScript 6 in `strict` mode (not TypeScript 7: it has no JS compiler API, which `next build` needs)
+- Next.js 16 (App Router) for both the UI and the API (route handlers under `app/api/`); no separate backend server.
+  Next.js 16 has breaking changes compared to older versions: check the bundled guides in `node_modules/next/dist/docs/` before using an API you are unsure about.
 - React for the UI; plain CSS (`app/globals.css`, CSS Modules where useful), no UI framework
 - `jose` (JWT verification), `@libsql/client` (storage: a local SQLite file in development, Turso in production)
 - Browser auth library: `oidc-client-ts` from npm, pinned to an exact version

@@ -1,5 +1,7 @@
-// Japanese. Keys must match en.js exactly. Plurals only use `other`.
-export default {
+// Japanese. Keys must match en.ts exactly (checked by the Locale type). Plurals only use `other`.
+import type { Locale } from '../index';
+
+const ja: Locale = {
   app: {
     title: 'ルドー',
   },
@@ -70,3 +72,5 @@ export default {
     UNKNOWN: 'エラーが発生しました。もう一度お試しください。',
   },
 };
+
+export default ja;

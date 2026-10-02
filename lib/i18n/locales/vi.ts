@@ -1,5 +1,7 @@
-// Vietnamese. Keys must match en.js exactly. Plurals only use `other`.
-export default {
+// Vietnamese. Keys must match en.ts exactly (checked by the Locale type). Plurals only use `other`.
+import type { Locale } from '../index';
+
+const vi: Locale = {
   app: {
     title: 'Cờ cá ngựa',
   },
@@ -70,3 +72,5 @@ export default {
     UNKNOWN: 'Đã có lỗi xảy ra, vui lòng thử lại.',
   },
 };
+
+export default vi;
