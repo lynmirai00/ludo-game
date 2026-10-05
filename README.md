@@ -53,6 +53,19 @@ The server refuses to start without `CLIENT_ID`. A local SQLite file is created 
 7. Run `npm run dev`, open http://localhost:3000 and press **Log in**. Any ZITADEL account works,
    including the admin account; new accounts can be created with **Register** on the login page.
 
+### Emails (verification codes, password resets)
+The local ZITADEL has no real mail server. `docker compose up -d` also starts **Mailpit**, which catches every
+email ZITADEL sends; read them at http://localhost:8025. Connect ZITADEL to it once in the Console:
+
+1. **Default Settings** (instance settings) → **SMTP Provider** (in some versions under **Notification Providers**).
+2. Add a **Generic SMTP** provider:
+   - Host and port: `mailpit:1025`
+   - TLS: off; user and password: empty
+   - Sender email: `noreply@ludo.localhost`, sender name: `Ludo`
+3. Save, then **Activate** the provider (an inactive provider sends nothing).
+
+If you registered before doing this, press **Resend code** on the verification page; the code then shows up in Mailpit.
+
 ### Login page languages
 ZITADEL's login page supports English and Japanese but **not Vietnamese**
 (see `ui_locales_supported` in http://localhost:8080/.well-known/openid-configuration).

@@ -180,6 +180,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  # Local mail catcher: ZITADEL sends its emails (verification codes, password resets) here.
+  # Read them at http://localhost:8025. Nothing leaves this machine.
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    restart: always
+    ports:
+      - "127.0.0.1:8025:8025"
   db:
     image: postgres:17
     restart: always
