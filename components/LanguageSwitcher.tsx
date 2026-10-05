@@ -3,11 +3,12 @@
 import { LANGUAGES, isSupported } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ id }: { id?: string }) {
   const { lang, t, setLanguage } = useI18n();
 
   return (
     <select
+      id={id}
       className="lang-select"
       aria-label={t('lang.label')}
       value={lang}

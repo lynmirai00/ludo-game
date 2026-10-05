@@ -10,6 +10,32 @@ const en = {
     retry: 'Try again',
     noScript: 'This game needs JavaScript. Please turn it on, or open the game in an up-to-date Safari or Chrome.',
   },
+  menu: {
+    open: 'Open menu',
+    close: 'Close menu',
+    title: 'Menu',
+  },
+  nav: {
+    back: 'Back',
+  },
+  account: {
+    title: 'Account',
+  },
+  rules: {
+    title: 'How to play',
+    items: {
+      players: '2 to 4 players, 4 horses each. You always play Red. Horses move counterclockwise, following the arrows.',
+      leave: 'Roll a 1 or a 6 to bring a horse out onto your start cell (the arrow next to your base).',
+      move: 'Move one horse exactly the number rolled. If a horse can move, you must move one.',
+      block: 'A horse may not jump over another horse, and may not stop on a horse of its own color.',
+      capture: 'Stop exactly on an opponent\'s horse to send it back to its base. There are no safe cells.',
+      extra: 'A 1 or a 6 gives you another roll.',
+      entrance: 'After a full lap, a horse must stop exactly on the cell just before its home column.',
+      home: 'From there, a roll of N moves it straight to step N. After that it climbs one step at a time, only with a roll of exactly the next step: from step 3 you need a 4.',
+      finish: 'The first to get all 4 horses onto steps 3–6 comes first. The others play on for the remaining places.',
+      saved: 'Log in to save your results, appear on the leaderboards and replay your games.',
+    },
+  },
   lang: {
     label: 'Language',
   },

@@ -90,6 +90,16 @@ Follow-up: the page then worked on the phone but the board had **no colors**: it
 `--c-base`, the same values color-mix produced), so the board looks identical on new browsers. Rule: avoid CSS
 features newer than the browserslist targets (Safari 15 / Chrome 90) without a fallback.
 
+## New layout (2026-10-05, asked by the user)
+Header: title, **Log in** (or the player's name, which opens Account) and a **☰** menu button. The menu is a drawer
+from the right: login prompt or player name, the language dropdown, then Leaderboard, My games (logged in),
+Account (logged in), How to play (new page, 10 short rules in all three languages), Log out. Each item opens a page
+that **covers the game** (the game keeps running underneath and is never lost); pages and the menu are browser
+history entries, so the phone's Back button and Escape close them. The main screen is only the game: controls,
+board and log ("Số đối thủ" and "Tăng tốc" stay there). Checked in Chrome at 375px as a guest (header, drawer, language
+change, Leaderboard and Rules pages, Back and Escape, game state unchanged, no CSP violations).
+Not yet seen with a real login: the My games and Account pages in the new layout.
+
 ## Small open items
 - Not yet seen in a browser: the "The others are still playing for the remaining places." hint (needs the human to
   finish while 2+ bots remain); the logic is simple and the texts exist.

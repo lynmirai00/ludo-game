@@ -75,20 +75,18 @@ body {
   display: grid;
   gap: var(--gutter);
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "controls" "board" "log" "leaderboard" "history";
+  grid-template-areas: "controls" "board" "log";
 }
 
 .controls { grid-area: controls; }
 .board { grid-area: board; }
 .log-panel { grid-area: log; }
-.leaderboard-panel { grid-area: leaderboard; }
-.history-panel { grid-area: history; }
 
 @media (min-width: 900px) {
   .app {
     grid-template-columns: minmax(0, 600px) minmax(260px, 1fr);
-    grid-template-rows: auto auto auto 1fr;
-    grid-template-areas: "board controls" "board log" "board leaderboard" "board history";
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "board controls" "board log";
     align-items: start;
   }
 }
@@ -419,35 +417,289 @@ body {
   font-weight: 700;
 }
 
-/* ---- Login area in the top bar ----------------------------------------- */
+/* ---- Header: login (or the player's name) and the menu button --------- */
 
 .topbar-end {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px 12px;
+  gap: 8px;
   min-width: 0;
 }
 
-.auth {
+.topbar-user {
+  max-width: 45vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-banner {
+  margin: 0;
+  padding: 8px var(--gutter);
+  background: #fff3cd;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* Icon buttons with icons drawn in CSS (no icon font, no images). */
+.icon-button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-button:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.icon-bars,
+.icon-bars::before,
+.icon-bars::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.icon-bars {
+  position: relative;
+}
+
+.icon-bars::before,
+.icon-bars::after {
+  content: "";
+  position: absolute;
+  left: 0;
+}
+
+.icon-bars::before { top: -6px; }
+.icon-bars::after { top: 6px; }
+
+.icon-close,
+.icon-back {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-close::before,
+.icon-close::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 0;
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.icon-close::before { transform: rotate(45deg); }
+.icon-close::after { transform: rotate(-45deg); }
+
+.icon-back::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 4px;
+  width: 9px;
+  height: 9px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+/* While the menu or a page is open the game behind it does not scroll. */
+body.no-scroll {
+  overflow: hidden;
+}
+
+/* ---- Menu drawer (slides in from the right) ----------------------------- */
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  background: rgb(0 0 0 / 0.4);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(88vw, 340px);
+  overflow-y: auto;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
-  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px var(--gutter) var(--gutter);
+  background: var(--surface);
+  box-shadow: -4px 0 16px rgb(0 0 0 / 0.2);
+  animation: drawer-in 0.18s ease-out;
 }
 
-.auth-name {
+@keyframes drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer { animation: none; }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.drawer-header .panel-title {
+  margin: 0;
+}
+
+.drawer-section {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-section .hint {
+  margin: 0;
+}
+
+.drawer-user {
+  margin: 0;
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
-.auth-stats,
-.auth-note {
-  color: var(--muted);
+.drawer-label {
   font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.drawer-nav {
+  list-style: none;
   margin: 0;
+  padding: 4px 0;
+}
+
+.drawer-item {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.drawer-item:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: -3px;
+}
+
+.drawer-chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--muted);
+  border-right: 2px solid var(--muted);
+  transform: rotate(45deg);
+}
+
+.drawer-footer {
+  border-bottom: 0;
+  margin-top: auto;
+}
+
+/* ---- Pages that cover the game (leaderboard, history, account, rules) --- */
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.sheet-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px var(--gutter);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.sheet-title {
+  margin: 0;
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.sheet-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--gutter);
+}
+
+.page-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px var(--gutter);
+}
+
+.account {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.account-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.account .hint {
+  margin: 0;
+}
+
+.rules {
+  margin: 0;
+  padding-inline-start: 1.4em;
+  display: grid;
+  gap: 10px;
+  line-height: 1.6;
 }
 
 .btn--small {

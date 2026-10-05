@@ -49,11 +49,16 @@ Detailed docs, read these before writing code:
 │       ├── games/route.ts
 │       └── leaderboard/route.ts
 ├── components/                 # client components ("use client")
-│   ├── TopBar.tsx
+│   ├── AppShell.tsx            # header (login or name, ☰), menu drawer, pages covering the game
+│   ├── AuthProvider.tsx        # login state, API calls with the token
 │   ├── LanguageSwitcher.tsx
 │   ├── Game.tsx                # game flow: rolls, bot turns, game state
 │   ├── Board.tsx               # board and token rendering
-│   └── GameLog.tsx
+│   ├── GameLog.tsx
+│   ├── Leaderboard.tsx         # page: most wins / fastest wins (+ admin reset)
+│   ├── MyGames.tsx             # page: the player's results (+ Replay.tsx)
+│   ├── Account.tsx             # page: name, stats, "Your data", log out
+│   └── Rules.tsx               # page: how to play
 ├── lib/
 │   ├── game.ts                 # PURE GAME LOGIC (no DOM, no React), shared by client and server
 │   ├── bot.ts                  # bot move selection (pure)

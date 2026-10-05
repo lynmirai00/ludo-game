@@ -11,6 +11,32 @@ const vi: Locale = {
     retry: 'Thử lại',
     noScript: 'Game cần JavaScript. Hãy bật JavaScript, hoặc mở game bằng Safari hoặc Chrome bản mới.',
   },
+  menu: {
+    open: 'Mở menu',
+    close: 'Đóng menu',
+    title: 'Menu',
+  },
+  nav: {
+    back: 'Quay lại',
+  },
+  account: {
+    title: 'Tài khoản',
+  },
+  rules: {
+    title: 'Luật chơi',
+    items: {
+      players: '2 đến 4 người chơi, mỗi người 4 ngựa. Bạn luôn cầm quân Đỏ. Ngựa đi ngược chiều kim đồng hồ, theo mũi tên.',
+      leave: 'Gieo được 1 hoặc 6 thì được ra quân: đặt một ngựa lên ô xuất phát (ô có mũi tên cạnh chuồng).',
+      move: 'Mỗi lượt đi một ngựa, đúng bằng số vừa gieo. Nếu có ngựa đi được thì bắt buộc phải đi.',
+      block: 'Ngựa không được nhảy qua ngựa khác và không được dừng trên ô có ngựa cùng màu.',
+      capture: 'Dừng đúng vào ô có ngựa đối thủ thì đá ngựa đó về chuồng. Không có ô an toàn.',
+      extra: 'Gieo được 1 hoặc 6 thì được gieo thêm một lượt.',
+      entrance: 'Đi hết một vòng, ngựa phải dừng đúng ở ô ngay trước cột về đích của mình.',
+      home: 'Từ đó, gieo được N thì lên thẳng bậc N. Sau đó mỗi lần chỉ lên một bậc và phải gieo đúng số của bậc kế tiếp: đang ở bậc 3 thì cần gieo 4.',
+      finish: 'Ai đưa đủ 4 ngựa lên các bậc 3–6 trước thì về nhất. Những người còn lại chơi tiếp để phân hạng.',
+      saved: 'Đăng nhập để lưu kết quả, có tên trên bảng xếp hạng và xem lại các ván đã chơi.',
+    },
+  },
   lang: {
     label: 'Ngôn ngữ',
   },

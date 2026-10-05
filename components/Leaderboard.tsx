@@ -56,8 +56,7 @@ export function Leaderboard() {
         : data.fastestWins[`${players}`].map((row) => ({ name: row.name, value: t('leaderboard.rolls', { count: row.rolls }) }));
 
   return (
-    <section className="panel leaderboard-panel">
-      <h2 className="panel-title">{t('leaderboard.title')}</h2>
+    <div className="page-content">
       <div className="tabs" role="tablist" aria-label={t('leaderboard.title')}>
         {(['mostWins', 'fastestWins'] as const).map((key) => (
           <button
@@ -115,6 +114,6 @@ export function Leaderboard() {
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }
