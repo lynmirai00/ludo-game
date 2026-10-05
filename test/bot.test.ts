@@ -12,7 +12,7 @@ function rolled(tokens: Partial<Record<Color, TokenRow>>, dice: number): GameSta
   return applyRoll({ ...state, tokens: all }, dice);
 }
 
-const progressAt = (color: Color, index: number) => (index - START[color] + 52) % 52;
+const progressAt = (color: Color, index: number) => (index - START[color] + 56) % 56;
 
 test('climbing the home column beats a capture', () => {
   // Token 0: step 3 → step 4. Token 1: 10 → 14, capturing Yellow.
@@ -27,12 +27,12 @@ test('a capture beats leaving the base', () => {
 });
 
 test('leaving the base beats stopping on the home entrance', () => {
-  const state = rolled({ [RED]: [44, BASE, BASE, BASE] }, 6); // token 0: 44 → 50
+  const state = rolled({ [RED]: [LAST_TRACK - 6, BASE, BASE, BASE] }, 6); // token 0: 49 → 55 (entrance)
   expect(chooseMove(state)).not.toBe(0);
 });
 
 test('stopping on the home entrance beats a plain move', () => {
-  const state = rolled({ [RED]: [47, 20, BASE, BASE] }, 3);
+  const state = rolled({ [RED]: [LAST_TRACK - 3, 20, BASE, BASE] }, 3);
   expect(chooseMove(state)).toBe(0);
 });
 

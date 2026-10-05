@@ -14,38 +14,45 @@ export type Cell = readonly [number, number];
 // Token progress, relative to the token's own color:
 // BASE, 0..LAST_TRACK on the shared track, then LAST_TRACK + 1..LAST_TRACK + TOP_STEP in the home column.
 export const BASE = -1;
-/** The home entrance: the last track cell before the home column. */
-export const LAST_TRACK = 50;
+/** The home entrance: the last track cell before the home column (just before the start cell). */
+export const LAST_TRACK = 55;
 export const TOP_STEP = 6;
 /** A player has finished when all 4 tokens stand on these steps. */
 const FINISH_STEPS = [3, 4, 5, 6];
-const TRACK_LENGTH = 52;
+const TRACK_LENGTH = 56;
 
-// Shared track, starting at Red's start cell, clockwise.
+// Shared track: 56 cells, 14 per color, starting at Red's start cell and going
+// counterclockwise on screen, like the traditional board (see docs/01-game-rules.md).
 export const PATH: readonly Cell[] = [
-  [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [5, 6], [4, 6], [3, 6], [2, 6], [1, 6], [0, 6], [0, 7], [0, 8],
-  [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 9], [6, 10], [6, 11], [6, 12], [6, 13], [6, 14], [7, 14], [8, 14],
-  [8, 13], [8, 12], [8, 11], [8, 10], [8, 9], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [14, 7], [14, 6],
-  [13, 6], [12, 6], [11, 6], [10, 6], [9, 6], [8, 5], [8, 4], [8, 3], [8, 2], [8, 1], [8, 0], [7, 0], [6, 0],
+  // Red: start [8,0] → right along row 8 → down column 6 → bottom middle
+  [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6], [14, 7],
+  // Green: start [14,8] → up column 8 → right along row 8 → right middle
+  [14, 8], [13, 8], [12, 8], [11, 8], [10, 8], [9, 8], [8, 8], [8, 9], [8, 10], [8, 11], [8, 12], [8, 13], [8, 14], [7, 14],
+  // Yellow: start [6,14] → left along row 6 → up column 8 → top middle
+  [6, 14], [6, 13], [6, 12], [6, 11], [6, 10], [6, 9], [6, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8], [0, 7],
+  // Blue: start [0,6] → down column 6 → left along row 6 → left middle
+  [0, 6], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0], [7, 0],
 ];
 
 type PerColor<T> = readonly [T, T, T, T];
 
-export const START: PerColor<number> = [0, 13, 26, 39];
+/** Index into PATH of each color's start cell; each color owns the 14 cells from there. */
+export const START: PerColor<number> = [0, 14, 28, 42];
 
+// Bases: Red bottom-left, Green bottom-right, Yellow top-right, Blue top-left.
 export const BASE_SLOTS: PerColor<PerColor<Cell>> = [
-  [[2, 2], [2, 3], [3, 2], [3, 3]],
-  [[2, 11], [2, 12], [3, 11], [3, 12]],
-  [[11, 11], [11, 12], [12, 11], [12, 12]],
   [[11, 2], [11, 3], [12, 2], [12, 3]],
+  [[11, 11], [11, 12], [12, 11], [12, 12]],
+  [[2, 11], [2, 12], [3, 11], [3, 12]],
+  [[2, 2], [2, 3], [3, 2], [3, 3]],
 ];
 
-/** Steps 1 to 6 of each home column. */
+/** Steps 1 to 6 of each home column; step 6 touches the center cell [7,7]. */
 export const HOME_COLUMNS: PerColor<readonly Cell[]> = [
   [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]],
-  [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]],
-  [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]],
   [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7], [8, 7]],
+  [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]],
+  [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]],
 ];
 
 export type TokenRow = [number, number, number, number];
@@ -99,7 +106,7 @@ function grantsExtraRoll(dice: number): boolean {
   return dice === 1 || dice === 6;
 }
 
-/** Index into PATH for a token on the shared track (progress 0..50), otherwise null. */
+/** Index into PATH for a token on the shared track (progress 0..55), otherwise null. */
 export function trackIndex(color: Color, progress: number): number | null {
   if (progress < 0 || progress > LAST_TRACK) return null;
   return (START[color] + progress) % TRACK_LENGTH;

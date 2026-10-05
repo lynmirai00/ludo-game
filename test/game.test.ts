@@ -41,7 +41,7 @@ function stateWith({ players = [RED, YELLOW], turn = RED, tokens = {}, ranking =
 
 // Progress value that puts `color`'s token on shared track cell `index`.
 function progressAt(color: Color, index: number): number {
-  return (index - START[color] + 52) % 52;
+  return (index - START[color] + 56) % 56;
 }
 
 function deepFreeze<T>(value: T): T {
@@ -71,24 +71,48 @@ function mulberry32(seed: number) {
 }
 
 describe('board data', () => {
-  test('the shared track has 52 distinct cells inside the 15x15 grid', () => {
-    expect(PATH).toHaveLength(52);
-    expect(new Set(PATH.map(([r, c]) => `${r},${c}`)).size).toBe(52);
+  test('the shared track has 56 distinct cells inside the 15x15 grid', () => {
+    expect(PATH).toHaveLength(56);
+    expect(new Set(PATH.map(([r, c]) => `${r},${c}`)).size).toBe(56);
     for (const [r, c] of PATH) expect(r >= 0 && r < 15 && c >= 0 && c < 15).toBe(true);
   });
 
-  test('consecutive track cells are adjacent, and the track is a closed loop', () => {
-    for (let i = 0; i < 52; i++) {
-      const [r1, c1] = PATH[i]!;
-      const [r2, c2] = PATH[(i + 1) % 52]!;
-      const dist = Math.abs(r1 - r2) + Math.abs(c1 - c2);
-      // Corner turns into the arms are diagonal steps (e.g. [6,5] → [5,6]).
-      expect(dist === 1 || (dist === 2 && r1 !== r2 && c1 !== c2), `step ${i}`).toBe(true);
+  test('consecutive track cells are adjacent (no diagonal steps), and the track is a closed loop', () => {
+    for (let i = 0; i < 56; i++) {
+      expect(adjacent(PATH[i]!, PATH[(i + 1) % 56]!), `step ${i}`).toBe(true);
     }
   });
 
+  test('bases: Red bottom-left, Green bottom-right, Yellow top-right, Blue top-left; each start cell is next to its base', () => {
+    const starts: Record<Color, Cell> = { [RED]: [8, 0], [GREEN]: [14, 8], [YELLOW]: [6, 14], [BLUE]: [0, 6] };
+    const bases: Record<Color, [rows: number[], cols: number[]]> = {
+      [RED]: [[9, 14], [0, 5]],
+      [GREEN]: [[9, 14], [9, 14]],
+      [YELLOW]: [[0, 5], [9, 14]],
+      [BLUE]: [[0, 5], [0, 5]],
+    };
+    for (const color of ALL_COLORS) {
+      expect(PATH[START[color]]).toEqual(starts[color]);
+      const [[r0, r1], [c0, c1]] = bases[color];
+      for (const [r, c] of [0, 1, 2, 3].map((i) => cellOf(color, BASE, i as 0 | 1 | 2 | 3))) {
+        expect(r >= r0! && r <= r1! && c >= c0! && c <= c1!, `slot of ${color}`).toBe(true);
+      }
+      // The start cell touches the base area.
+      const [sr, sc] = starts[color];
+      const touches = [-1, 0, 1].some((dr) =>
+        [-1, 0, 1].some((dc) => sr + dr >= r0! && sr + dr <= r1! && sc + dc >= c0! && sc + dc <= c1!),
+      );
+      expect(touches, `start of ${color}`).toBe(true);
+    }
+  });
+
+  test('each color owns 14 consecutive track cells, from its start to the next start', () => {
+    expect(START).toEqual([0, 14, 28, 42]);
+  });
+
   test('each home column has 6 adjacent steps, the 6th at the edge of the center', () => {
-    const sixth: Cell[] = [[7, 6], [6, 7], [7, 8], [8, 7]];
+    // Red, Green, Yellow, Blue: each step 6 touches the center cell [7,7].
+    const sixth: Cell[] = [[7, 6], [8, 7], [7, 8], [6, 7]];
     for (const color of ALL_COLORS) {
       const column = HOME_COLUMNS[color];
       expect(column).toHaveLength(TOP_STEP);
@@ -306,8 +330,8 @@ describe('turns', () => {
 describe('home entrance and home column', () => {
   test('a token must stop exactly on its home entrance', () => {
     // The other tokens are on the track (not in base) so nothing else affects token 0.
-    const state = stateWith({ tokens: { [RED]: [48, 10, 20, 30] } });
-    expect(legalMoves(state, 2)).toContain(0); // 50: the entrance
+    const state = stateWith({ tokens: { [RED]: [LAST_TRACK - 2, 10, 20, 30] } });
+    expect(legalMoves(state, 2)).toContain(0); // 55: the entrance
     expect(legalMoves(state, 3)).not.toContain(0); // would pass the entrance
     expect(legalMoves(state, 5)).not.toContain(0);
   });
@@ -400,18 +424,19 @@ describe('rollCount()', () => {
 
 describe('cellOf()', () => {
   test('tokens in base sit in their own slot', () => {
-    expect(cellOf(RED, BASE, 0)).toEqual([2, 2]);
-    expect(cellOf(GREEN, BASE, 3)).toEqual([3, 12]);
-    expect(cellOf(YELLOW, BASE, 1)).toEqual([11, 12]);
-    expect(cellOf(BLUE, BASE, 2)).toEqual([12, 2]);
+    expect(cellOf(RED, BASE, 0)).toEqual([11, 2]);
+    expect(cellOf(GREEN, BASE, 3)).toEqual([12, 12]);
+    expect(cellOf(YELLOW, BASE, 1)).toEqual([2, 12]);
+    expect(cellOf(BLUE, BASE, 2)).toEqual([3, 2]);
   });
 
   test('progress 0 is the start cell', () => {
     for (const color of ALL_COLORS) expect(cellOf(color, 0, 0)).toEqual(PATH[START[color]]);
   });
 
-  test('for every color, progress 50 is the cell right before step 1 of its home column', () => {
-    const expected: Record<Color, Cell> = { [RED]: [7, 0], [GREEN]: [0, 7], [YELLOW]: [7, 14], [BLUE]: [14, 7] };
+  test('for every color, progress 55 is the cell right before step 1 of its home column', () => {
+    expect(LAST_TRACK).toBe(55);
+    const expected: Record<Color, Cell> = { [RED]: [7, 0], [GREEN]: [14, 7], [YELLOW]: [7, 14], [BLUE]: [0, 7] };
     for (const color of ALL_COLORS) {
       expect(cellOf(color, LAST_TRACK, 0)).toEqual(expected[color]);
       expect(cellOf(color, step(1), 0)).toEqual(HOME_COLUMNS[color][0]);

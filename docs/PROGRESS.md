@@ -33,6 +33,13 @@ CLIENT_ID, userinfo name, saving a result, language restore). If it fails, the t
 server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
+## Board layout (changed 2026-10-05, after Phase 3)
+The board now follows the user's reference picture of a traditional Vietnamese board: bases Blue top-left,
+Yellow top-right, Red bottom-left, Green bottom-right; tokens move counterclockwise on screen; the track has
+56 cells (14 per color, including the 4 cells next to the center); start cells are the edge cells with an arrow;
+the center is the single cell [7,7]. Progress model: track 0..55 (55 = home entrance), home steps 56..61.
+Drawn with colored track circles, numbered home steps, light bases with thick borders.
+
 ## Decisions made on 2026-10-05 (before Phase 3)
 - Database schema settled in `docs/02-zitadel.md`: ISO 8601 text timestamps, foreign key, indexes, name refreshed
   on every login, `games.rolls` for the "Fastest wins" leaderboard (human's own rolls, per 2/3/4 players, each

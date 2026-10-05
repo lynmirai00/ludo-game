@@ -199,6 +199,8 @@ body {
 }
 
 /* ---- Board -------------------------------------------------------------- */
+/* Drawn like the traditional Vietnamese board: track circles colored by segment,
+   numbered home steps, bases as light squares with a thick border, a 4-color center. */
 
 .board {
   container-type: inline-size;
@@ -215,55 +217,82 @@ body {
   overflow: hidden;
 }
 
+/* Per-color shades: a medium tint for the track, a light tint for home steps and bases. */
+.cell--red, .base--red, .base-slot--red { --c: var(--red); }
+.cell--green, .base--green, .base-slot--green { --c: var(--green); }
+.cell--yellow, .base--yellow, .base-slot--yellow { --c: var(--yellow); }
+.cell--blue, .base--blue, .base-slot--blue { --c: var(--blue); }
+
 .cell {
-  border: 1px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 4.5cqw;
   line-height: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
-/* Home column steps 1-6 show their number. */
-.cell--home {
-  color: rgb(255 255 255 / 0.9);
+.cell::before,
+.cell::after {
+  grid-area: 1 / 1;
+}
+
+.cell--track::before {
+  content: "";
+  width: 84%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c) 62%, white);
+}
+
+/* Start cells: full color with a white arrow in the direction of movement. */
+.cell--start::before {
+  background: var(--c);
+}
+
+.cell--start::after {
+  content: "➜";
+  color: white;
   font-size: 3.6cqw;
   font-weight: 700;
 }
 
-.cell--red { background: var(--red); }
-.cell--green { background: var(--green); }
-.cell--yellow { background: var(--yellow); }
-.cell--blue { background: var(--blue); }
+.cell--start-up::after { transform: rotate(-90deg); }
+.cell--start-down::after { transform: rotate(90deg); }
+.cell--start-left::after { transform: rotate(180deg); }
 
-.base--red { background: var(--red); }
-.base--green { background: var(--green); }
-.base--yellow { background: var(--yellow); }
-.base--blue { background: var(--blue); }
+/* Home column steps 1-6 show their number. */
+.cell--home {
+  margin: 8%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c) 40%, white);
+  color: rgb(0 0 0 / 0.55);
+  font-size: 3.6cqw;
+  font-weight: 700;
+}
 
-.base-inner {
-  background: var(--surface);
-  border-radius: 12%;
+.base {
+  margin: 4%;
+  background: color-mix(in srgb, var(--c) 28%, white);
+  border: 1.6cqw solid var(--c);
+  border-radius: 2px;
 }
 
 .base-slot {
   margin: 14%;
   border-radius: 50%;
-  border: 2px solid currentColor;
-  opacity: 0.5;
+  border: 2px solid var(--c);
+  background: white;
+  opacity: 0.8;
 }
 
-.base-slot--red { color: var(--red); }
-.base-slot--green { color: var(--green); }
-.base-slot--yellow { color: var(--yellow); }
-.base-slot--blue { color: var(--blue); }
-
-/* Goal zone: each color's triangle points at its own home column. */
+/* Center: each triangle points at the home column of its color
+   (Blue from the top, Yellow from the right, Green from the bottom, Red from the left). */
 .center {
   background: conic-gradient(
     from -45deg,
-    var(--green) 0deg 90deg,
+    var(--blue) 0deg 90deg,
     var(--yellow) 90deg 180deg,
-    var(--blue) 180deg 270deg,
+    var(--green) 180deg 270deg,
     var(--red) 270deg 360deg
   );
 }
@@ -291,7 +320,7 @@ body {
   padding: 0;
   border-radius: 50%;
   border: 2px solid var(--surface);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  box-shadow: 0 0 0 1.5px rgb(0 0 0 / 0.55), 0 2px 4px rgb(0 0 0 / 0.45);
   cursor: default;
 }
 
