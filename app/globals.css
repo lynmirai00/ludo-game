@@ -222,13 +222,12 @@ body {
   line-height: 1;
 }
 
-.cell--star::after,
-.cell--start::after {
-  content: "★";
-  color: var(--muted);
+/* Home column steps 1-6 show their number. */
+.cell--home {
+  color: rgb(255 255 255 / 0.9);
+  font-size: 3.6cqw;
+  font-weight: 700;
 }
-
-.cell--start::after { color: rgb(255 255 255 / 0.9); }
 
 .cell--red { background: var(--red); }
 .cell--green { background: var(--green); }
@@ -349,4 +348,29 @@ body {
 .log-item--green { border-left-color: var(--green); }
 .log-item--yellow { border-left-color: var(--yellow); }
 .log-item--blue { border-left-color: var(--blue); }
-.log-item--win { font-weight: 700; }
+.log-item--finish { font-weight: 700; }
+
+/* ---- Ranking ------------------------------------------------------------ */
+
+.ranking-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.ranking-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 4px 8px;
+  border-left: 4px solid var(--player-color, var(--muted));
+  overflow-wrap: anywhere;
+}
+
+.ranking-place {
+  font-weight: 700;
+  min-width: 3em;
+}

@@ -17,6 +17,7 @@ const vi: Locale = {
     dice: 'Xúc xắc',
     lastRoll: 'Vừa gieo được {value}',
     board: 'Bàn cờ',
+    ranking: 'Thứ hạng',
   },
   turn: {
     self: 'Lượt của bạn',
@@ -27,11 +28,20 @@ const vi: Locale = {
     move: 'Chọn một quân đang nhấp nháy để đi.',
     botThinking: '{player} đang suy nghĩ…',
     gameOver: 'Bấm "Ván mới" để chơi lại.',
+    watching: 'Những người còn lại đang chơi tiếp để phân hạng.',
+  },
+  // Finishing places; used as {place} in events.finish.
+  rank: {
+    first: 'nhất',
+    second: 'nhì',
+    third: 'ba',
+    fourth: 'tư',
   },
   token: {
     label: 'Quân {color} số {number}',
   },
   player: {
+    you: 'Bạn',
     bot: 'Máy {color}',
   },
   colors: {
@@ -45,9 +55,9 @@ const vi: Locale = {
     noMove: { self: 'Bạn không có nước đi nào.', other: '{player} không có nước đi nào.' },
     enter: { self: 'Bạn ra quân.', other: '{player} ra quân.' },
     capture: { self: 'Bạn đá quân {color} về chuồng!', other: '{player} đá quân {color} về chuồng!' },
-    goal: { self: 'Bạn đưa một quân về đích.', other: '{player} đưa một quân về đích.' },
+    step: { self: 'Ngựa của bạn lên bậc {step}.', other: 'Ngựa của {player} lên bậc {step}.' },
     extraTurn: { self: 'Bạn được đi thêm lượt.', other: '{player} được đi thêm lượt.' },
-    win: { self: 'Bạn đã thắng!', other: '{player} thắng ván này.' },
+    finish: { self: 'Bạn về {place}!', other: '{player} về {place}.' },
   },
   auth: {
     login: 'Đăng nhập',

@@ -1,12 +1,11 @@
 'use client';
 
-import type { CSSProperties, Ref } from 'react';
+import { memo, type CSSProperties, type Ref } from 'react';
 import {
   BASE_SLOTS,
   COLORS,
   HOME_COLUMNS,
   PATH,
-  SAFE,
   START,
   cellOf,
   type Cell,
@@ -24,9 +23,11 @@ function area([row, col]: Cell, rows = 1, cols = 1): CSSProperties {
   return { gridArea: `${row + 1} / ${col + 1} / span ${rows} / span ${cols}` };
 }
 
-// The board itself never changes, so build it once.
-function StaticBoard() {
-  const cells = COLORS.flatMap((color, c) => {
+// The board only changes with the language (step numbers), so it is memoized.
+const StaticBoard = memo(function StaticBoard({ lang }: { lang: string }) {
+  const number = new Intl.NumberFormat(lang);
+
+  const bases = COLORS.flatMap((color, c) => {
     const [r, col] = BASE_CORNERS[c]!;
     return [
       <div key={`base-${color}`} className={`base base--${color}`} style={area([r, col], 6, 6)} />,
@@ -34,29 +35,33 @@ function StaticBoard() {
       ...BASE_SLOTS[c as Color].map((slot, i) => (
         <div key={`slot-${color}-${i}`} className={`base-slot base-slot--${color}`} style={area(slot)} />
       )),
-      ...HOME_COLUMNS[c as Color].map((cell, i) => (
-        <div key={`home-${color}-${i}`} className={`cell cell--home cell--${color}`} style={area(cell)} />
-      )),
     ];
   });
 
+  // Steps 1-6; drawn after the center so step 6 sits on top of it.
+  const homeColumns = COLORS.flatMap((color, c) =>
+    HOME_COLUMNS[c as Color].map((cell, i) => (
+      <div key={`home-${color}-${i}`} className={`cell cell--home cell--${color}`} style={area(cell)} aria-hidden="true">
+        {number.format(i + 1)}
+      </div>
+    )),
+  );
+
   const track = PATH.map((cell, i) => {
     const startColor = START.indexOf(i);
-    let className = 'cell';
-    if (startColor !== -1) className += ` cell--start cell--${COLORS[startColor]}`;
-    else if (SAFE.has(i)) className += ' cell--star';
+    const className = startColor === -1 ? 'cell' : `cell cell--start cell--${COLORS[startColor]}`;
     return <div key={`track-${i}`} className={className} style={area(cell)} />;
   });
 
   return (
     <>
-      {cells}
+      {bases}
       {track}
       <div className="center" style={area([6, 6], 3, 3)} />
+      {homeColumns}
     </>
   );
-}
-const STATIC_BOARD = <StaticBoard />;
+});
 
 type Props = {
   state: GameState;
@@ -67,7 +72,7 @@ type Props = {
 };
 
 export function Board({ state, movable, onTokenClick, ref }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // Group tokens by cell so several tokens on one cell are drawn side by side.
   const stacks = new Map<string, { cell: Cell; tokens: { color: Color; i: TokenIndex }[] }>();
@@ -82,7 +87,7 @@ export function Board({ state, movable, onTokenClick, ref }: Props) {
 
   return (
     <div ref={ref} className="board" role="group" aria-label={t('game.board')}>
-      {STATIC_BOARD}
+      <StaticBoard lang={lang} />
       {[...stacks].map(([key, { cell, tokens }]) => (
         <div key={key} className={`stack stack--${Math.min(tokens.length, 4)}`} style={area(cell)}>
           {tokens.map(({ color, i }) => {

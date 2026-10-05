@@ -1,6 +1,7 @@
-// Pure Ludo rules, shared by the browser and the server. See docs/01-game-rules.md.
-// No DOM, no React, no randomness, no text: every function takes a state and returns a
-// new one, and the game log is a list of structured events that the UI translates.
+// Pure rules of Vietnamese "Cờ cá ngựa", shared by the browser and the server.
+// See docs/01-game-rules.md. No DOM, no React, no randomness, no text: every function
+// takes a state and returns a new one, and the game log is a list of structured
+// events that the UI translates.
 
 export const COLORS = ['red', 'green', 'yellow', 'blue'] as const;
 export type ColorName = (typeof COLORS)[number];
@@ -10,10 +11,14 @@ export type TokenIndex = 0 | 1 | 2 | 3;
 /** [row, col] on the 15x15 grid, zero-based. */
 export type Cell = readonly [number, number];
 
-// Token progress, relative to the token's own color.
+// Token progress, relative to the token's own color:
+// BASE, 0..LAST_TRACK on the shared track, then LAST_TRACK + 1..LAST_TRACK + TOP_STEP in the home column.
 export const BASE = -1;
-export const LAST_TRACK = 50; // last cell on the shared track before the home column
-export const GOAL = 56;
+/** The home entrance: the last track cell before the home column. */
+export const LAST_TRACK = 50;
+export const TOP_STEP = 6;
+/** A player has finished when all 4 tokens stand on these steps. */
+const FINISH_STEPS = [3, 4, 5, 6];
 const TRACK_LENGTH = 52;
 
 // Shared track, starting at Red's start cell, clockwise.
@@ -23,9 +28,6 @@ export const PATH: readonly Cell[] = [
   [8, 13], [8, 12], [8, 11], [8, 10], [8, 9], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [14, 7], [14, 6],
   [13, 6], [12, 6], [11, 6], [10, 6], [9, 6], [8, 5], [8, 4], [8, 3], [8, 2], [8, 1], [8, 0], [7, 0], [6, 0],
 ];
-
-// Star cells (indices into PATH), including all four start cells. No captures here.
-export const SAFE: ReadonlySet<number> = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 
 type PerColor<T> = readonly [T, T, T, T];
 
@@ -38,14 +40,13 @@ export const BASE_SLOTS: PerColor<PerColor<Cell>> = [
   [[11, 2], [11, 3], [12, 2], [12, 3]],
 ];
 
+/** Steps 1 to 6 of each home column. */
 export const HOME_COLUMNS: PerColor<readonly Cell[]> = [
-  [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]],
-  [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]],
-  [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]],
-  [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]],
+  [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]],
+  [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]],
+  [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]],
+  [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7], [8, 7]],
 ];
-
-export const GOAL_CELLS: PerColor<Cell> = [[7, 6], [6, 7], [7, 8], [8, 7]];
 
 export type TokenRow = [number, number, number, number];
 
@@ -54,14 +55,11 @@ export type GameEvent =
   | { type: 'noMove'; player: Color }
   | { type: 'enter'; player: Color; token: TokenIndex }
   | { type: 'capture'; player: Color; victimColor: Color; victimToken: TokenIndex }
-  | { type: 'goal'; player: Color; token: TokenIndex }
+  | { type: 'step'; player: Color; token: TokenIndex; step: number }
   | { type: 'extraTurn'; player: Color }
-  | { type: 'win'; player: Color };
+  | { type: 'finish'; player: Color; place: number };
 
 export type Phase = 'roll' | 'move' | 'over';
-
-/** Rule variants; all are off by default (none implemented yet). */
-export type GameOptions = Record<string, never>;
 
 export type GameState = {
   /** Colors in play, in clockwise turn order. */
@@ -72,9 +70,9 @@ export type GameState = {
   /** The last rolled value; the one to move with while phase is 'move'. */
   dice: number | null;
   phase: Phase;
-  winner: Color | null;
+  /** Colors in finishing order: ranking[0] placed 1st. Complete once phase is 'over'. */
+  ranking: Color[];
   events: GameEvent[];
-  options: GameOptions;
 };
 
 export class IllegalMoveError extends Error {
@@ -97,25 +95,30 @@ function cellAt(cells: readonly Cell[], index: number): Cell {
   return cell;
 }
 
+function grantsExtraRoll(dice: number): boolean {
+  return dice === 1 || dice === 6;
+}
+
 /** Index into PATH for a token on the shared track (progress 0..50), otherwise null. */
 export function trackIndex(color: Color, progress: number): number | null {
   if (progress < 0 || progress > LAST_TRACK) return null;
   return (START[color] + progress) % TRACK_LENGTH;
 }
 
+/** Home column step (1..6) for a progress value, otherwise null. */
+export function homeStep(progress: number): number | null {
+  return progress > LAST_TRACK ? progress - LAST_TRACK : null;
+}
+
 /** [row, col] where a token should be drawn. */
 export function cellOf(color: Color, progress: number, tokenIndex: TokenIndex): Cell {
   if (progress === BASE) return BASE_SLOTS[color][tokenIndex];
   if (progress <= LAST_TRACK) return cellAt(PATH, trackIndex(color, progress)!);
-  if (progress < GOAL) return cellAt(HOME_COLUMNS[color], progress - LAST_TRACK - 1);
-  return GOAL_CELLS[color];
+  return cellAt(HOME_COLUMNS[color], progress - LAST_TRACK - 1);
 }
 
-/**
- * `players` is a list of 2 to 4 distinct colors; turn order is always clockwise.
- * `options` is reserved for rule variants, which are all off by default.
- */
-export function createGame({ players, options = {} }: { players: readonly number[]; options?: GameOptions }): GameState {
+/** `players` is a list of 2 to 4 distinct colors; turn order is always clockwise. */
+export function createGame({ players }: { players: readonly number[] }): GameState {
   const valid =
     Array.isArray(players) &&
     players.length >= 2 &&
@@ -132,32 +135,85 @@ export function createGame({ players, options = {} }: { players: readonly number
     turn: ordered[0]!,
     dice: null,
     phase: 'roll',
-    winner: null,
+    ranking: [],
     events: [],
-    options: { ...options },
   };
 }
 
-function nextPlayer(state: GameState): Color {
-  const i = state.players.indexOf(state.turn);
-  return state.players[(i + 1) % state.players.length]!;
+/** The token (of any player in the game) on shared track cell `index`, if any. */
+function occupantAt(state: GameState, index: number): { color: Color; token: TokenIndex } | null {
+  for (const color of state.players) {
+    for (const token of TOKEN_INDICES) {
+      if (trackIndex(color, state.tokens[color][token]) === index) return { color, token };
+    }
+  }
+  return null;
 }
 
-function canMove(progress: number, dice: number): boolean {
-  if (progress === BASE) return dice === 6;
-  return progress + dice <= GOAL;
+function ownStepTaken(state: GameState, color: Color, step: number): boolean {
+  return state.tokens[color].includes(LAST_TRACK + step);
+}
+
+/** Where the token would land with this dice value, or null if it cannot move. */
+function destination(state: GameState, color: Color, token: TokenIndex, dice: number): number | null {
+  const from = state.tokens[color][token];
+
+  // Leave the base on a 1 or a 6, onto the start cell, unless an own token stands there.
+  if (from === BASE) {
+    if (!grantsExtraRoll(dice)) return null;
+    return occupantAt(state, START[color])?.color === color ? null : 0;
+  }
+
+  // From the home entrance: straight to step N, if steps 1..N are free.
+  if (from === LAST_TRACK) {
+    for (let s = 1; s <= dice; s++) if (ownStepTaken(state, color, s)) return null;
+    return LAST_TRACK + dice;
+  }
+
+  // In the home column: one step up, only with a roll of exactly the next step.
+  const step = homeStep(from);
+  if (step !== null) {
+    if (step >= TOP_STEP || dice !== step + 1 || ownStepTaken(state, color, step + 1)) return null;
+    return from + 1;
+  }
+
+  // On the track: must stop at the entrance at the latest, never pass over any token,
+  // and never land on an own token.
+  const to = from + dice;
+  if (to > LAST_TRACK) return null;
+  for (let p = from + 1; p < to; p++) {
+    if (occupantAt(state, trackIndex(color, p)!)) return null;
+  }
+  return occupantAt(state, trackIndex(color, to)!)?.color === color ? null : to;
+}
+
+function isFinished(state: GameState, color: Color): boolean {
+  return state.ranking.includes(color);
+}
+
+function hasFinishingSteps(row: TokenRow): boolean {
+  return FINISH_STEPS.every((step) => row.includes(LAST_TRACK + step));
+}
+
+/** The next player clockwise who has not finished yet. */
+function nextPlayer(state: GameState): Color {
+  const i = state.players.indexOf(state.turn);
+  for (let k = 1; k <= state.players.length; k++) {
+    const color = state.players[(i + k) % state.players.length]!;
+    if (!isFinished(state, color)) return color;
+  }
+  return state.turn;
 }
 
 /** Token indices the current player can move with this dice value. */
 export function legalMoves(state: GameState, diceValue: number): TokenIndex[] {
   if (state.phase === 'over') return [];
-  const row = state.tokens[state.turn];
-  return TOKEN_INDICES.filter((i) => canMove(row[i], diceValue));
+  return TOKEN_INDICES.filter((token) => destination(state, state.turn, token, diceValue) !== null);
 }
 
 /**
- * Records a roll. If no token can move, the turn passes straight away (even on a 6:
- * the extra turn from a 6 is only earned by actually moving).
+ * Records a roll. If no token can move, a 1 or a 6 still gives another roll;
+ * any other value passes the turn.
  */
 export function applyRoll(state: GameState, diceValue: number): GameState {
   if (!Number.isInteger(diceValue) || diceValue < 1 || diceValue > 6) {
@@ -171,58 +227,64 @@ export function applyRoll(state: GameState, diceValue: number): GameState {
     return { ...state, dice: diceValue, phase: 'move', events };
   }
   events.push({ type: 'noMove', player });
+  if (grantsExtraRoll(diceValue)) {
+    events.push({ type: 'extraTurn', player });
+    return { ...state, dice: diceValue, phase: 'roll', events };
+  }
   return { ...state, dice: diceValue, phase: 'roll', turn: nextPlayer(state), events };
 }
 
 /**
- * Moves one of the current player's tokens by the rolled value. Handles leaving the
- * base, captures, reaching the goal, extra turns and the win. `tokenIndex` may come
- * from an untrusted client, so anything that is not a legal move throws ILLEGAL_MOVE.
+ * Moves one of the current player's tokens with the rolled value: leaving the base,
+ * captures, climbing the home column, extra rolls, finishing and the end of the game.
+ * `tokenIndex` may come from an untrusted client, so anything that is not a legal move
+ * throws ILLEGAL_MOVE.
  */
 export function applyMove(state: GameState, tokenIndex: number): GameState {
   if (state.phase !== 'move' || state.dice === null) {
     throw new IllegalMoveError(`cannot move in phase "${state.phase}"`);
   }
   const dice = state.dice;
-  if (!isTokenIndex(tokenIndex) || !legalMoves(state, dice).includes(tokenIndex)) {
-    throw new IllegalMoveError(`token ${tokenIndex} cannot move`);
-  }
-
   const player = state.turn;
+  const to = isTokenIndex(tokenIndex) ? destination(state, player, tokenIndex, dice) : null;
+  if (!isTokenIndex(tokenIndex) || to === null) throw new IllegalMoveError(`token ${tokenIndex} cannot move`);
+
   const tokens = state.tokens.map((row) => [...row]) as GameState['tokens'];
   const events = [...state.events];
   const from = tokens[player][tokenIndex];
-  const to = from === BASE ? 0 : from + dice;
+
+  // Blocking guarantees at most one token per track cell, so at most one capture.
+  const landing = trackIndex(player, to);
+  const victim = landing === null ? null : occupantAt(state, landing);
   tokens[player][tokenIndex] = to;
 
   if (from === BASE) events.push({ type: 'enter', player, token: tokenIndex });
+  if (victim && victim.color !== player) {
+    tokens[victim.color][victim.token] = BASE;
+    events.push({ type: 'capture', player, victimColor: victim.color, victimToken: victim.token });
+  }
+  const step = homeStep(to);
+  if (step !== null) events.push({ type: 'step', player, token: tokenIndex, step });
 
-  let captured = false;
-  const landing = trackIndex(player, to);
-  if (landing !== null && !SAFE.has(landing)) {
-    for (const color of state.players) {
-      if (color === player) continue;
-      for (const i of TOKEN_INDICES) {
-        if (trackIndex(color, tokens[color][i]) === landing) {
-          tokens[color][i] = BASE;
-          captured = true;
-          events.push({ type: 'capture', player, victimColor: color, victimToken: i });
-        }
-      }
+  const next: GameState = { ...state, tokens, events, phase: 'roll' };
+
+  if (hasFinishingSteps(tokens[player])) {
+    const ranking = [...state.ranking, player];
+    events.push({ type: 'finish', player, place: ranking.length });
+    const left = state.players.filter((color) => !ranking.includes(color));
+    if (left.length === 1) {
+      const last = left[0]!;
+      ranking.push(last);
+      events.push({ type: 'finish', player: last, place: ranking.length });
+      return { ...next, ranking, phase: 'over' };
     }
+    // A finished player never rolls again, even after a 1 or a 6.
+    return { ...next, ranking, turn: nextPlayer({ ...next, ranking }) };
   }
 
-  if (to === GOAL) {
-    events.push({ type: 'goal', player, token: tokenIndex });
-    if (tokens[player].every((p) => p === GOAL)) {
-      events.push({ type: 'win', player });
-      return { ...state, tokens, events, phase: 'over', winner: player };
-    }
-  }
-
-  if (dice === 6 || captured) {
+  if (grantsExtraRoll(dice)) {
     events.push({ type: 'extraTurn', player });
-    return { ...state, tokens, events, phase: 'roll' };
+    return next;
   }
-  return { ...state, tokens, events, phase: 'roll', turn: nextPlayer(state) };
+  return { ...next, turn: nextPlayer(next) };
 }

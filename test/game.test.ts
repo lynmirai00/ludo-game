@@ -1,20 +1,18 @@
-import { describe, test } from 'vitest';
-import assert from 'node:assert/strict';
+import { describe, expect, test } from 'vitest';
 import {
   BASE,
-  GOAL,
-  GOAL_CELLS,
   HOME_COLUMNS,
   LAST_TRACK,
   PATH,
-  SAFE,
   START,
+  TOP_STEP,
   applyMove,
   applyRoll,
   cellOf,
   createGame,
   legalMoves,
   trackIndex,
+  type Cell,
   type Color,
   type GameEvent,
   type GameState,
@@ -28,13 +26,16 @@ const YELLOW: Color = 2;
 const BLUE: Color = 3;
 const ALL_COLORS: Color[] = [RED, GREEN, YELLOW, BLUE];
 
-type Setup = { players?: Color[]; turn?: Color; tokens?: Partial<Record<Color, TokenRow>> };
+/** Progress value for home column step 1..6. */
+const step = (n: number) => LAST_TRACK + n;
+
+type Setup = { players?: Color[]; turn?: Color; tokens?: Partial<Record<Color, TokenRow>>; ranking?: Color[] };
 
 // Builds a game where it is `turn`'s move, with the given token progress values.
-function stateWith({ players = [RED, YELLOW], turn = RED, tokens = {} }: Setup = {}): GameState {
+function stateWith({ players = [RED, YELLOW], turn = RED, tokens = {}, ranking = [] }: Setup = {}): GameState {
   const state = createGame({ players });
   const all = state.tokens.map((row, color) => tokens[color as Color] ?? row) as GameState['tokens'];
-  return { ...state, turn, tokens: all };
+  return { ...state, turn, tokens: all, ranking };
 }
 
 // Progress value that puts `color`'s token on shared track cell `index`.
@@ -54,6 +55,10 @@ function newEvents(before: GameState, after: GameState): GameEvent[] {
   return after.events.slice(before.events.length);
 }
 
+function adjacent([r1, c1]: Cell, [r2, c2]: Cell): boolean {
+  return Math.abs(r1 - r2) + Math.abs(c1 - c2) === 1;
+}
+
 // Small seeded PRNG so the simulation is reproducible.
 function mulberry32(seed: number) {
   return function next() {
@@ -66,9 +71,9 @@ function mulberry32(seed: number) {
 
 describe('board data', () => {
   test('the shared track has 52 distinct cells inside the 15x15 grid', () => {
-    assert.equal(PATH.length, 52);
-    assert.equal(new Set(PATH.map(([r, c]) => `${r},${c}`)).size, 52);
-    for (const [r, c] of PATH) assert.ok(r >= 0 && r < 15 && c >= 0 && c < 15);
+    expect(PATH).toHaveLength(52);
+    expect(new Set(PATH.map(([r, c]) => `${r},${c}`)).size).toBe(52);
+    for (const [r, c] of PATH) expect(r >= 0 && r < 15 && c >= 0 && c < 15).toBe(true);
   });
 
   test('consecutive track cells are adjacent, and the track is a closed loop', () => {
@@ -77,309 +82,352 @@ describe('board data', () => {
       const [r2, c2] = PATH[(i + 1) % 52]!;
       const dist = Math.abs(r1 - r2) + Math.abs(c1 - c2);
       // Corner turns into the arms are diagonal steps (e.g. [6,5] → [5,6]).
-      assert.ok(dist === 1 || (dist === 2 && r1 !== r2 && c1 !== c2), `step ${i}`);
+      expect(dist === 1 || (dist === 2 && r1 !== r2 && c1 !== c2), `step ${i}`).toBe(true);
     }
   });
 
-  test('all four start cells are safe', () => {
-    for (const start of START) assert.ok(SAFE.has(start));
+  test('each home column has 6 adjacent steps, the 6th at the edge of the center', () => {
+    const sixth: Cell[] = [[7, 6], [6, 7], [7, 8], [8, 7]];
+    for (const color of ALL_COLORS) {
+      const column = HOME_COLUMNS[color];
+      expect(column).toHaveLength(TOP_STEP);
+      for (let i = 1; i < column.length; i++) expect(adjacent(column[i - 1]!, column[i]!)).toBe(true);
+      expect(column[5]).toEqual(sixth[color]);
+    }
   });
 });
 
 describe('createGame()', () => {
-  test('starts with every token in base and the first player to roll', () => {
+  test('starts with every token in base, an empty ranking and the first player to roll', () => {
     const state = createGame({ players: [RED, YELLOW] });
-    assert.deepEqual(state.players, [RED, YELLOW]);
-    assert.equal(state.tokens.length, 4);
-    for (const row of state.tokens) assert.deepEqual(row, [BASE, BASE, BASE, BASE]);
-    assert.equal(state.turn, RED);
-    assert.equal(state.phase, 'roll');
-    assert.equal(state.dice, null);
-    assert.equal(state.winner, null);
-    assert.deepEqual(state.events, []);
+    expect(state.players).toEqual([RED, YELLOW]);
+    for (const row of state.tokens) expect(row).toEqual([BASE, BASE, BASE, BASE]);
+    expect(state.turn).toBe(RED);
+    expect(state.phase).toBe('roll');
+    expect(state.dice).toBeNull();
+    expect(state.ranking).toEqual([]);
+    expect(state.events).toEqual([]);
   });
 
-  test('puts players in clockwise order', () => {
-    assert.deepEqual(createGame({ players: [BLUE, RED, YELLOW, GREEN] }).players, [RED, GREEN, YELLOW, BLUE]);
+  test('puts players in clockwise order, with 2, 3 or 4 players', () => {
+    expect(createGame({ players: [BLUE, RED, YELLOW, GREEN] }).players).toEqual([RED, GREEN, YELLOW, BLUE]);
+    expect(createGame({ players: [YELLOW, RED, GREEN] }).players).toEqual([RED, GREEN, YELLOW]);
   });
 
   test('rejects invalid player lists', () => {
-    assert.throws(() => createGame({ players: [RED] }));
-    assert.throws(() => createGame({ players: [RED, RED] }));
-    assert.throws(() => createGame({ players: [RED, 4] }));
-    assert.throws(() => createGame({ players: [RED, GREEN, YELLOW, BLUE, RED] }));
+    expect(() => createGame({ players: [RED] })).toThrow(RangeError);
+    expect(() => createGame({ players: [RED, RED] })).toThrow(RangeError);
+    expect(() => createGame({ players: [RED, 4] })).toThrow(RangeError);
+    expect(() => createGame({ players: [RED, GREEN, YELLOW, BLUE, RED] })).toThrow(RangeError);
   });
 });
 
 describe('leaving the base', () => {
-  test('without a 6 no token can leave the base', () => {
+  test('only a 1 or a 6 lets a token leave the base', () => {
     const state = createGame({ players: [RED, YELLOW] });
-    for (let dice = 1; dice <= 5; dice++) assert.deepEqual(legalMoves(state, dice), []);
+    expect(legalMoves(state, 1)).toEqual([0, 1, 2, 3]);
+    expect(legalMoves(state, 6)).toEqual([0, 1, 2, 3]);
+    for (const dice of [2, 3, 4, 5]) expect(legalMoves(state, dice)).toEqual([]);
   });
 
-  test('a 6 lets any token in base leave', () => {
-    assert.deepEqual(legalMoves(createGame({ players: [RED, YELLOW] }), 6), [0, 1, 2, 3]);
-  });
-
-  test('a token leaving the base is placed at progress 0, on its start cell', () => {
-    for (const color of [RED, GREEN, YELLOW, BLUE]) {
-      let state = createGame({ players: [RED, GREEN, YELLOW, BLUE] });
-      state = { ...state, turn: color };
-      state = applyRoll(state, 6);
-      const before = state;
-      state = applyMove(state, 2);
-      assert.equal(state.tokens[color][2], 0);
-      assert.equal(trackIndex(color, 0), START[color]);
-      assert.deepEqual(newEvents(before, state)[0], { type: 'enter', player: color, token: 2 });
+  test('the token is placed on its start cell (progress 0) and does not move further', () => {
+    for (const color of ALL_COLORS) {
+      for (const dice of [1, 6]) {
+        const before = applyRoll(stateWith({ players: ALL_COLORS, turn: color }), dice);
+        const after = applyMove(before, 2);
+        expect(after.tokens[color][2]).toBe(0);
+        expect(trackIndex(color, 0)).toBe(START[color]);
+        expect(newEvents(before, after)[0]).toEqual({ type: 'enter', player: color, token: 2 });
+      }
     }
+  });
+
+  test('not allowed while a token of the same color is on the start cell', () => {
+    const state = stateWith({ tokens: { [RED]: [0, BASE, BASE, BASE] } });
+    expect(legalMoves(state, 6)).toEqual([0]);
+  });
+
+  test("captures an opponent standing on the start cell", () => {
+    const before = applyRoll(stateWith({ tokens: { [YELLOW]: [progressAt(YELLOW, START[RED]), BASE, BASE, BASE] } }), 1);
+    const after = applyMove(before, 0);
+    expect(after.tokens[RED][0]).toBe(0);
+    expect(after.tokens[YELLOW][0]).toBe(BASE);
+    expect(newEvents(before, after)).toContainEqual({ type: 'capture', player: RED, victimColor: YELLOW, victimToken: 0 });
   });
 });
 
-describe('moving', () => {
-  test('a token on the track moves forward exactly the number rolled', () => {
-    let state = stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } });
-    state = applyMove(applyRoll(state, 4), 0);
-    assert.equal(state.tokens[RED][0], 14);
+describe('moving and blocking', () => {
+  test('a token moves forward exactly the number rolled', () => {
+    const state = applyMove(applyRoll(stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } }), 4), 0);
+    expect(state.tokens[RED][0]).toBe(14);
   });
 
-  test('a roll is recorded as an event', () => {
+  test('a roll is recorded as an event, and a legal move must be made before rolling again', () => {
     const state = applyRoll(stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } }), 3);
-    assert.equal(state.dice, 3);
-    assert.equal(state.phase, 'move');
-    assert.deepEqual(state.events.at(-1), { type: 'rolled', player: RED, value: 3 });
+    expect(state.dice).toBe(3);
+    expect(state.phase).toBe('move');
+    expect(state.events.at(-1)).toEqual({ type: 'rolled', player: RED, value: 3 });
+    expect(() => applyRoll(state, 3)).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
+  });
+
+  test("cannot pass over an opponent's token", () => {
+    const state = stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 12), BASE, BASE, BASE] } });
+    expect(legalMoves(state, 1)).toContain(0); // 11: before the blocker
+    expect(legalMoves(state, 2)).toContain(0); // 12: lands on it (capture)
+    expect(legalMoves(state, 3)).not.toContain(0); // 13: would pass over it
+    expect(legalMoves(state, 5)).not.toContain(0);
+  });
+
+  test('cannot pass over or land on its own token', () => {
+    const state = stateWith({ tokens: { [RED]: [10, 12, BASE, BASE] } });
+    expect(legalMoves(state, 1)).toContain(0);
+    expect(legalMoves(state, 2)).not.toContain(0); // lands on own token
+    expect(legalMoves(state, 4)).not.toContain(0); // passes over own token
+    expect(legalMoves(state, 4)).toContain(1);
   });
 
   test('the input state is never mutated', () => {
     const start = deepFreeze(stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } }));
     const rolled = deepFreeze(applyRoll(start, 6));
-    assert.doesNotThrow(() => applyMove(rolled, 0));
-    assert.equal(start.tokens[RED][0], 10);
-    assert.equal(rolled.tokens[RED][0], 10);
+    expect(() => applyMove(rolled, 0)).not.toThrow();
+    expect(start.tokens[RED][0]).toBe(10);
+    expect(rolled.tokens[RED][0]).toBe(10);
   });
 
   test('an illegal move throws ILLEGAL_MOVE', () => {
     const state = applyRoll(stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } }), 3);
-    assert.throws(() => applyMove(state, 1), { code: 'ILLEGAL_MOVE' }); // token 1 is in base, no 6
-    assert.throws(() => applyMove(state, 7), { code: 'ILLEGAL_MOVE' });
+    for (const token of [1, 7, -1, 0.5]) {
+      expect(() => applyMove(state, token)).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
+    }
   });
 
-  test('rolling or moving in the wrong phase throws', () => {
+  test('moving before rolling throws ILLEGAL_MOVE', () => {
     const state = stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } });
-    assert.throws(() => applyMove(state, 0), { code: 'ILLEGAL_MOVE' }); // has not rolled
-    assert.throws(() => applyRoll(applyRoll(state, 3), 3), { code: 'ILLEGAL_MOVE' }); // must move first
+    expect(() => applyMove(state, 0)).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
   });
 
   test('dice values outside 1..6 are rejected', () => {
     const state = createGame({ players: [RED, YELLOW] });
     // Values a client could send; the cast is the point of the test.
     for (const dice of [0, 7, 2.5, '3', null] as unknown as number[]) {
-      assert.throws(() => applyRoll(state, dice), RangeError);
+      expect(() => applyRoll(state, dice)).toThrow(RangeError);
     }
   });
 });
 
 describe('capture', () => {
-  test('landing on an opponent sends that token back to base and gives an extra turn', () => {
-    let state = stateWith({
-      tokens: { [RED]: [5, BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 7), BASE, BASE, BASE] },
-    });
-    state = applyRoll(state, 2);
-    const before = state;
-    state = applyMove(state, 0);
-    assert.equal(state.tokens[RED][0], 7);
-    assert.equal(state.tokens[YELLOW][0], BASE);
-    assert.equal(state.turn, RED);
-    assert.equal(state.phase, 'roll');
-    assert.deepEqual(newEvents(before, state), [
-      { type: 'capture', player: RED, victimColor: YELLOW, victimToken: 0 },
-      { type: 'extraTurn', player: RED },
-    ]);
+  test('landing on an opponent sends it back to base, without an extra roll', () => {
+    const before = applyRoll(
+      stateWith({ tokens: { [RED]: [5, BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 8), BASE, BASE, BASE] } }),
+      3,
+    );
+    const after = applyMove(before, 0);
+    expect(after.tokens[RED][0]).toBe(8);
+    expect(after.tokens[YELLOW][0]).toBe(BASE);
+    expect(after.turn).toBe(YELLOW);
+    expect(newEvents(before, after)).toEqual([{ type: 'capture', player: RED, victimColor: YELLOW, victimToken: 0 }]);
   });
 
-  test('every opponent token on the cell is captured', () => {
-    const at7 = progressAt(YELLOW, 7);
-    let state = stateWith({ tokens: { [RED]: [5, BASE, BASE, BASE], [YELLOW]: [at7, at7, 20, BASE] } });
-    state = applyMove(applyRoll(state, 2), 0);
-    assert.deepEqual(state.tokens[YELLOW], [BASE, BASE, 20, BASE]);
-  });
-
-  test('no capture on a star cell', () => {
-    assert.ok(SAFE.has(8));
-    let state = stateWith({
-      tokens: { [RED]: [6, BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 8), BASE, BASE, BASE] },
-    });
-    state = applyMove(applyRoll(state, 2), 0);
-    assert.equal(state.tokens[RED][0], 8);
-    assert.equal(state.tokens[YELLOW][0], progressAt(YELLOW, 8));
-    assert.equal(state.turn, YELLOW); // no capture, no 6 → turn passes
-  });
-
-  test("no capture on another color's start cell", () => {
+  test("there are no safe cells: a token on its own start cell can be captured", () => {
     const greenStart = START[GREEN];
-    let state = stateWith({
+    const state = stateWith({
       players: [RED, GREEN],
       tokens: { [RED]: [greenStart - 3, BASE, BASE, BASE], [GREEN]: [0, BASE, BASE, BASE] },
     });
-    state = applyMove(applyRoll(state, 3), 0);
-    assert.equal(trackIndex(RED, state.tokens[RED][0]), greenStart);
-    assert.equal(state.tokens[GREEN][0], 0);
+    const after = applyMove(applyRoll(state, 3), 0);
+    expect(trackIndex(RED, after.tokens[RED][0])).toBe(greenStart);
+    expect(after.tokens[GREEN][0]).toBe(BASE);
   });
 
-  test('your own tokens can share a cell', () => {
-    let state = stateWith({ tokens: { [RED]: [5, 7, BASE, BASE] } });
-    state = applyMove(applyRoll(state, 2), 0);
-    assert.deepEqual(state.tokens[RED].slice(0, 2), [7, 7]);
-  });
-
-  test('tokens in the home column cannot be captured', () => {
-    // Red at 51 (home column) is not on the shared track at all.
-    let state = stateWith({
+  test('tokens in a home column are not on the track and cannot be captured', () => {
+    expect(trackIndex(RED, step(1))).toBeNull();
+    const state = stateWith({
       turn: YELLOW,
-      tokens: { [RED]: [51, BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 49), BASE, BASE, BASE] },
+      tokens: { [RED]: [step(1), BASE, BASE, BASE], [YELLOW]: [progressAt(YELLOW, 49), BASE, BASE, BASE] },
     });
-    state = applyMove(applyRoll(state, 3), 0);
-    assert.equal(state.tokens[RED][0], 51);
+    const after = applyMove(applyRoll(state, 2), 0);
+    expect(after.tokens[RED][0]).toBe(step(1));
   });
 });
 
 describe('turns', () => {
-  test('a 6 keeps the same player', () => {
-    let state = stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } });
-    const before = applyRoll(state, 6);
-    state = applyMove(before, 0);
-    assert.equal(state.turn, RED);
-    assert.equal(state.phase, 'roll');
-    assert.deepEqual(newEvents(before, state).at(-1), { type: 'extraTurn', player: RED });
+  test('a 1 or a 6 gives another roll', () => {
+    for (const dice of [1, 6]) {
+      const before = applyRoll(stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE] } }), dice);
+      const after = applyMove(before, 0);
+      expect(after.turn).toBe(RED);
+      expect(after.phase).toBe('roll');
+      expect(newEvents(before, after).at(-1)).toEqual({ type: 'extraTurn', player: RED });
+    }
   });
 
-  test('a normal move passes the turn clockwise', () => {
-    let state = stateWith({ players: [RED, GREEN, YELLOW, BLUE], tokens: { [RED]: [10, BASE, BASE, BASE] } });
-    state = applyMove(applyRoll(state, 3), 0);
-    assert.equal(state.turn, GREEN);
-    assert.equal(state.phase, 'roll');
+  test('a 1 or a 6 gives another roll even when no token can move', () => {
+    // Steps 1-3 are taken and the entrance token needs steps 1..6 free for a 6.
+    const before = stateWith({ tokens: { [RED]: [step(1), step(2), step(3), LAST_TRACK] } });
+    const after = applyRoll(before, 6);
+    expect(after.turn).toBe(RED);
+    expect(after.phase).toBe('roll');
+    expect(newEvents(before, after)).toEqual([
+      { type: 'rolled', player: RED, value: 6 },
+      { type: 'noMove', player: RED },
+      { type: 'extraTurn', player: RED },
+    ]);
   });
 
-  test('in a 2-player game Red and Yellow alternate', () => {
-    let state = stateWith({ tokens: { [RED]: [10, BASE, BASE, BASE], [YELLOW]: [10, BASE, BASE, BASE] } });
-    state = applyMove(applyRoll(state, 3), 0);
-    assert.equal(state.turn, YELLOW);
-    state = applyMove(applyRoll(state, 3), 0);
-    assert.equal(state.turn, RED);
-  });
-
-  test('with no legal move the turn passes automatically', () => {
+  test('any other roll with no legal move passes the turn', () => {
     const before = createGame({ players: [RED, YELLOW] });
-    const state = applyRoll(before, 3);
-    assert.equal(state.turn, YELLOW);
-    assert.equal(state.phase, 'roll');
-    assert.deepEqual(newEvents(before, state), [
+    const after = applyRoll(before, 3);
+    expect(after.turn).toBe(YELLOW);
+    expect(newEvents(before, after)).toEqual([
       { type: 'rolled', player: RED, value: 3 },
       { type: 'noMove', player: RED },
     ]);
   });
 
-  test('a 6 with no legal move also passes the turn (extra turns need a move)', () => {
-    const state = applyRoll(stateWith({ tokens: { [RED]: [55, GOAL, GOAL, GOAL] } }), 6);
-    assert.equal(state.turn, YELLOW);
-  });
-
-  test('the last player wraps around to the first', () => {
-    let state = stateWith({ players: [RED, GREEN, YELLOW, BLUE], turn: BLUE });
-    state = applyRoll(state, 2);
-    assert.equal(state.turn, RED);
+  test('a normal move passes the turn clockwise, with 2, 3 and 4 players', () => {
+    const orders: [Color[], Color[]][] = [
+      [[RED, YELLOW], [YELLOW, RED]],
+      [[RED, GREEN, YELLOW], [GREEN, YELLOW, RED]],
+      [ALL_COLORS, [GREEN, YELLOW, BLUE, RED]],
+    ];
+    for (const [players, expected] of orders) {
+      let state = stateWith({ players });
+      const seen: Color[] = [];
+      for (let i = 0; i < players.length; i++) {
+        state = applyRoll(state, 3); // nobody can leave the base on a 3
+        seen.push(state.turn);
+      }
+      expect(seen).toEqual(expected);
+    }
   });
 });
 
-describe('home column and goal', () => {
-  test('after progress 50 a token turns into its home column', () => {
-    let state = stateWith({ tokens: { [RED]: [48, BASE, BASE, BASE] } });
-    state = applyMove(applyRoll(state, 4), 0);
-    assert.equal(state.tokens[RED][0], 52);
-    assert.deepEqual(cellOf(RED, 52, 0), HOME_COLUMNS[RED][1]);
+describe('home entrance and home column', () => {
+  test('a token must stop exactly on its home entrance', () => {
+    // The other tokens are on the track (not in base) so nothing else affects token 0.
+    const state = stateWith({ tokens: { [RED]: [48, 10, 20, 30] } });
+    expect(legalMoves(state, 2)).toContain(0); // 50: the entrance
+    expect(legalMoves(state, 3)).not.toContain(0); // would pass the entrance
+    expect(legalMoves(state, 5)).not.toContain(0);
   });
 
-  test('a token cannot overshoot the goal', () => {
-    const state = stateWith({ tokens: { [RED]: [54, BASE, BASE, BASE] } });
-    assert.deepEqual(legalMoves(state, 3), []);
-    assert.deepEqual(legalMoves(state, 6), [1, 2, 3]); // only tokens in base can use the 6
+  test('from the entrance a roll of N goes straight to step N when steps 1..N are free', () => {
+    const before = applyRoll(stateWith({ tokens: { [RED]: [LAST_TRACK, BASE, BASE, BASE] } }), 4);
+    const after = applyMove(before, 0);
+    expect(after.tokens[RED][0]).toBe(step(4));
+    expect(newEvents(before, after)).toContainEqual({ type: 'step', player: RED, token: 0, step: 4 });
   });
 
-  test('an exact roll reaches the goal (56)', () => {
-    let state = stateWith({ tokens: { [RED]: [54, BASE, BASE, BASE] } });
-    const before = applyRoll(state, 2);
+  test('from the entrance, own tokens on the way or on step N block the move', () => {
+    const state = stateWith({ tokens: { [RED]: [LAST_TRACK, step(2), BASE, BASE] } });
+    expect(legalMoves(state, 1)).toContain(0);
+    expect(legalMoves(state, 2)).not.toContain(0); // step 2 is taken
+    expect(legalMoves(state, 4)).not.toContain(0); // would pass step 2
+  });
+
+  test('from step S only a roll of S + 1 climbs one step, if it is free', () => {
+    const state = stateWith({ tokens: { [RED]: [step(3), BASE, BASE, BASE] } });
+    expect(legalMoves(state, 4)).toEqual([0]);
+    for (const dice of [1, 2, 3, 5, 6]) expect(legalMoves(state, dice)).not.toContain(0);
+    expect(applyMove(applyRoll(state, 4), 0).tokens[RED][0]).toBe(step(4));
+
+    const blocked = stateWith({ tokens: { [RED]: [step(3), step(4), BASE, BASE] } });
+    expect(legalMoves(blocked, 4)).not.toContain(0);
+  });
+
+  test('a token on step 6 never moves again', () => {
+    const state = stateWith({ tokens: { [RED]: [step(6), BASE, BASE, BASE] } });
+    for (let dice = 1; dice <= 6; dice++) expect(legalMoves(state, dice)).not.toContain(0);
+  });
+});
+
+describe('finishing and ranking', () => {
+  test('4 tokens on steps 3-6 finish the player; in a 2-player game the other takes 2nd and the game ends', () => {
+    const before = applyRoll(stateWith({ tokens: { [RED]: [step(2), step(4), step(5), step(6)] } }), 3);
+    const after = applyMove(before, 0);
+    expect(after.ranking).toEqual([RED, YELLOW]);
+    expect(after.phase).toBe('over');
+    expect(newEvents(before, after)).toEqual([
+      { type: 'step', player: RED, token: 0, step: 3 },
+      { type: 'finish', player: RED, place: 1 },
+      { type: 'finish', player: YELLOW, place: 2 },
+    ]);
+    expect(() => applyRoll(after, 3)).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
+  });
+
+  test('in a 4-player game play continues and finished players are skipped', () => {
+    let state = applyMove(
+      applyRoll(stateWith({ players: ALL_COLORS, tokens: { [RED]: [step(2), step(4), step(5), step(6)] } }), 3),
+      0,
+    );
+    expect(state.ranking).toEqual([RED]);
+    expect(state.phase).toBe('roll');
+    expect(state.turn).toBe(GREEN);
+    state = applyRoll(state, 3); // Green: no move
+    state = applyRoll(state, 3); // Yellow: no move
+    state = applyRoll(state, 3); // Blue: no move
+    expect(state.turn).toBe(GREEN); // Red is skipped
+  });
+
+  test('the next finisher takes the next place, and the last one left takes the last place', () => {
+    const finishing: TokenRow = [step(2), step(4), step(5), step(6)];
+    let state = stateWith({ players: [RED, GREEN, YELLOW], turn: YELLOW, ranking: [GREEN], tokens: { [YELLOW]: finishing } });
+    const before = applyRoll(state, 3);
     state = applyMove(before, 0);
-    assert.equal(state.tokens[RED][0], GOAL);
-    assert.deepEqual(newEvents(before, state)[0], { type: 'goal', player: RED, token: 0 });
-  });
-
-  test('a token in the goal can never move again', () => {
-    const state = stateWith({ tokens: { [RED]: [GOAL, BASE, BASE, BASE] } });
-    assert.ok(!legalMoves(state, 6).includes(0));
-  });
-
-  test('4 tokens in the goal ends the game with a winner', () => {
-    let state = stateWith({ tokens: { [RED]: [GOAL, GOAL, GOAL, 55] } });
-    const before = applyRoll(state, 1);
-    state = applyMove(before, 3);
-    assert.equal(state.phase, 'over');
-    assert.equal(state.winner, RED);
-    assert.deepEqual(newEvents(before, state).at(-1), { type: 'win', player: RED });
-  });
-
-  test('the game ends immediately, even on a 6, and nothing more can happen', () => {
-    let state = stateWith({ tokens: { [RED]: [GOAL, GOAL, GOAL, 50] } });
-    state = applyMove(applyRoll(state, 6), 3);
-    assert.equal(state.phase, 'over');
-    assert.ok(!state.events.some((e) => e.type === 'extraTurn'));
-    assert.throws(() => applyRoll(state, 3), { code: 'ILLEGAL_MOVE' });
+    expect(state.ranking).toEqual([GREEN, YELLOW, RED]);
+    expect(state.phase).toBe('over');
+    expect(newEvents(before, state).slice(-2)).toEqual([
+      { type: 'finish', player: YELLOW, place: 2 },
+      { type: 'finish', player: RED, place: 3 },
+    ]);
   });
 });
 
 describe('cellOf()', () => {
   test('tokens in base sit in their own slot', () => {
-    assert.deepEqual(cellOf(RED, BASE, 0), [2, 2]);
-    assert.deepEqual(cellOf(GREEN, BASE, 3), [3, 12]);
-    assert.deepEqual(cellOf(YELLOW, BASE, 1), [11, 12]);
-    assert.deepEqual(cellOf(BLUE, BASE, 2), [12, 2]);
+    expect(cellOf(RED, BASE, 0)).toEqual([2, 2]);
+    expect(cellOf(GREEN, BASE, 3)).toEqual([3, 12]);
+    expect(cellOf(YELLOW, BASE, 1)).toEqual([11, 12]);
+    expect(cellOf(BLUE, BASE, 2)).toEqual([12, 2]);
   });
 
   test('progress 0 is the start cell', () => {
-    for (const color of [RED, GREEN, YELLOW, BLUE]) assert.deepEqual(cellOf(color, 0, 0), PATH[START[color]]);
+    for (const color of ALL_COLORS) expect(cellOf(color, 0, 0)).toEqual(PATH[START[color]]);
   });
 
-  test('for every color, progress 50 is the cell right before its home column', () => {
-    const expected = { [RED]: [7, 0], [GREEN]: [0, 7], [YELLOW]: [7, 14], [BLUE]: [14, 7] };
-    for (const color of [RED, GREEN, YELLOW, BLUE]) {
-      const last = cellOf(color, LAST_TRACK, 0);
-      const firstHome = cellOf(color, LAST_TRACK + 1, 0);
-      assert.deepEqual(last, expected[color]);
-      assert.deepEqual(firstHome, HOME_COLUMNS[color][0]);
-      assert.equal(Math.abs(last[0] - firstHome[0]) + Math.abs(last[1] - firstHome[1]), 1);
+  test('for every color, progress 50 is the cell right before step 1 of its home column', () => {
+    const expected: Record<Color, Cell> = { [RED]: [7, 0], [GREEN]: [0, 7], [YELLOW]: [7, 14], [BLUE]: [14, 7] };
+    for (const color of ALL_COLORS) {
+      expect(cellOf(color, LAST_TRACK, 0)).toEqual(expected[color]);
+      expect(cellOf(color, step(1), 0)).toEqual(HOME_COLUMNS[color][0]);
+      expect(adjacent(cellOf(color, LAST_TRACK, 0), cellOf(color, step(1), 0))).toBe(true);
     }
   });
 
-  test('the home column leads to the goal cell', () => {
-    for (const color of [RED, GREEN, YELLOW, BLUE]) {
-      assert.deepEqual(cellOf(color, 55, 0), HOME_COLUMNS[color][4]);
-      assert.deepEqual(cellOf(color, GOAL, 0), GOAL_CELLS[color]);
+  test('steps 1-6 map to the home column cells', () => {
+    for (const color of ALL_COLORS) {
+      for (let n = 1; n <= 6; n++) expect(cellOf(color, step(n), 0)).toEqual(HOME_COLUMNS[color][n - 1]);
     }
   });
 });
 
 describe('simulation', () => {
-  test('100 bot-only games with random dice all end, none gets stuck', () => {
+  test('100 bot-only games with 2, 3 and 4 players all end with a full ranking', () => {
     const random = mulberry32(12345);
     const rollDie = () => 1 + Math.floor(random() * 6);
+    const setups: Color[][] = [[RED, YELLOW], [RED, GREEN, YELLOW], ALL_COLORS];
     for (let game = 0; game < 100; game++) {
-      const players: Color[] = game % 2 === 0 ? ALL_COLORS : [RED, YELLOW];
+      const players = setups[game % 3]!;
       let state = createGame({ players });
       let steps = 0;
       while (state.phase !== 'over') {
         state = state.phase === 'roll' ? applyRoll(state, rollDie()) : applyMove(state, chooseMove(state));
-        assert.ok(++steps < 20000, `game ${game} is stuck`);
+        expect(++steps < 50000, `game ${game} is stuck`).toBe(true);
       }
-      assert.ok(state.winner !== null && players.includes(state.winner));
-      assert.deepEqual(state.tokens[state.winner], [GOAL, GOAL, GOAL, GOAL]);
+      expect([...state.ranking].sort()).toEqual([...players].sort());
+      for (const color of state.ranking.slice(0, -1)) {
+        expect([...state.tokens[color]].sort()).toEqual([step(3), step(4), step(5), step(6)]);
+      }
     }
   });
 });

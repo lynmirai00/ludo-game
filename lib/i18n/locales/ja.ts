@@ -17,6 +17,7 @@ const ja: Locale = {
     dice: 'サイコロ',
     lastRoll: '出た目：{value}',
     board: 'ゲーム盤',
+    ranking: '順位',
   },
   turn: {
     self: 'あなたの番です',
@@ -27,11 +28,20 @@ const ja: Locale = {
     move: '光っているコマを選んでください。',
     botThinking: '{player}が考えています…',
     gameOver: '「新しいゲーム」を押すと、もう一度遊べます。',
+    watching: '残りの順位を決めるため、ほかのプレイヤーが対戦中です。',
+  },
+  // Finishing places; used as {place} in events.finish.
+  rank: {
+    first: '1位',
+    second: '2位',
+    third: '3位',
+    fourth: '4位',
   },
   token: {
     label: '{color}のコマ{number}',
   },
   player: {
+    you: 'あなた',
     bot: 'CPU（{color}）',
   },
   colors: {
@@ -45,9 +55,9 @@ const ja: Locale = {
     noMove: { self: '動かせるコマがありません。', other: '{player}は動かせるコマがありません。' },
     enter: { self: 'コマを出しました。', other: '{player}がコマを出しました。' },
     capture: { self: '{color}のコマを取りました！', other: '{player}が{color}のコマを取りました！' },
-    goal: { self: 'コマがゴールしました。', other: '{player}のコマがゴールしました。' },
+    step: { self: 'コマが{step}段目に上がりました。', other: '{player}のコマが{step}段目に上がりました。' },
     extraTurn: { self: 'もう一度振れます。', other: '{player}はもう一度振れます。' },
-    win: { self: 'あなたの勝ちです！', other: '{player}の勝ちです。' },
+    finish: { self: 'あなたは{place}でゴールしました！', other: '{player}は{place}でゴールしました。' },
   },
   auth: {
     login: 'ログイン',

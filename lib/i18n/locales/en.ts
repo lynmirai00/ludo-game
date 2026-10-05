@@ -16,6 +16,7 @@ const en = {
     dice: 'Dice',
     lastRoll: 'Last roll: {value}',
     board: 'Game board',
+    ranking: 'Ranking',
   },
   turn: {
     self: 'Your turn',
@@ -26,11 +27,20 @@ const en = {
     move: 'Pick a highlighted token to move.',
     botThinking: '{player} is thinking…',
     gameOver: 'Press New game to play again.',
+    watching: 'The others are still playing for the remaining places.',
+  },
+  // Finishing places; used as {place} in events.finish.
+  rank: {
+    first: '1st',
+    second: '2nd',
+    third: '3rd',
+    fourth: '4th',
   },
   token: {
     label: '{color} token {number}',
   },
   player: {
+    you: 'You',
     bot: '{color} bot',
   },
   colors: {
@@ -44,9 +54,9 @@ const en = {
     noMove: { self: 'You have no legal move.', other: '{player} has no legal move.' },
     enter: { self: 'You brought a token out.', other: '{player} brought a token out.' },
     capture: { self: 'You captured a {color} token!', other: '{player} captured a {color} token!' },
-    goal: { self: 'You got a token home.', other: '{player} got a token home.' },
+    step: { self: 'Your token climbed to step {step}.', other: "{player}'s token climbed to step {step}." },
     extraTurn: { self: 'You get another turn.', other: '{player} gets another turn.' },
-    win: { self: 'You won!', other: '{player} won the game.' },
+    finish: { self: 'You came in {place}!', other: '{player} came in {place}.' },
   },
   auth: {
     login: 'Log in',
