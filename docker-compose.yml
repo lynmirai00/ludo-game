@@ -20,7 +20,8 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
     ports:
-      - "8080:8080"
+      # Only reachable from this machine, not from the local network.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy

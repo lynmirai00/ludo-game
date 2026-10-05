@@ -97,6 +97,7 @@ Detailed docs, read these before writing code:
 - Never put the Client ID, passwords or secrets in code. All config comes from environment variables (`.env.local` locally, Vercel project settings in production). Do not expose server config through `NEXT_PUBLIC_*` variables; the browser gets what it needs from `GET /api/config`.
 - The server never returns translated text. API errors return a stable `code` (e.g. `{ "error": { "code": "UNAUTHORIZED" } }`) and the browser translates it.
 - Never trust data from the browser: the server always takes the player's identity from the `sub` claim of a verified token, never from the request body.
+- Never show an email address publicly (leaderboards, logs); see "Display name" in `docs/02-zitadel.md`.
 - Do not store tokens in `localStorage` by hand; let `oidc-client-ts` manage them.
 - The server runs on Vercel serverless functions: no state may live in memory between requests. Anything that must survive a request (players, games, matches) goes in the database.
 - The UI must work on phones (the board scales to the screen width, down to 375px), in all three languages (translated strings can be longer or shorter than English; layouts must not break).

@@ -49,6 +49,8 @@ Right now the browser reports the human's place itself, so it can cheat. Change 
   on Vercel each request may run on a different instance. Only the match's owner may roll or move.
 - The server records the human's place and roll count itself as soon as the place is decided. Remove `POST /api/games`.
 - Guest games (not logged in) still run entirely in the browser as before and are not saved.
+- Limit unfinished matches per player (e.g. at most 3; starting a new one abandons the oldest) so nobody can
+  fill the database by creating matches in a loop.
 
 Done when: it is impossible to record a win by calling the API directly without actually playing; there are tests for illegal moves and for another player's token trying to act on someone else's match.
 
@@ -61,8 +63,23 @@ Done when: an account with the admin role sees and can use "Clear leaderboard"; 
 Follow "Deployment to Vercel" in `docs/02-zitadel.md`.
 - Make sure nothing depends on the local filesystem or in-memory state.
 - Document in the README: creating the ZITADEL Cloud application, the Turso database, and the Vercel environment variables.
+- `DELETE /api/me` deletes the player and all their games, with a "Delete my data" button and a short note in all
+  three languages about what is stored (player ID, display name, language, game results).
 
-Done when: the deployed app on Vercel can be played as a guest, login works against the production ZITADEL, and results are saved to Turso.
+Security checklist (all must be done before the deployed app is shared publicly):
+- Phase 4 is done: before it, any logged-in user can post a fake result and top both leaderboards.
+- Names: the leaderboards never show an email address (see "Display name" in `docs/02-zitadel.md`).
+- ZITADEL Cloud: Development Mode off; Redirect and Post Logout URIs list only the exact production URL (no wildcards,
+  no preview URLs); email verification on for self-registration, and captcha or invite-only if fake accounts show up.
+- Vercel: secrets (`DATABASE_AUTH_TOKEN`) marked sensitive and never in git; Preview deployments use a separate
+  Turso database (or none), never the production one; a rate limit rule in Vercel Firewall for `/api/*`.
+- Security headers in `next.config.ts`: Content-Security-Policy (`oidc-client-ts` keeps tokens in
+  `sessionStorage`, so an XSS would leak them; allow only this origin and the ZITADEL URL), `frame-ancestors 'none'`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`.
+- No permissive CORS on `/api/*` (the API is same-origin only).
+- Dependencies: `npm audit` clean of high/critical issues and Next.js on its latest patch release before deploying.
+
+Done when: the deployed app on Vercel can be played as a guest, login works against the production ZITADEL, results are saved to Turso, and every item of the security checklist is done.
 
 ## Phase 7 (optional): Online multiplayer
 - Game rooms with a 6-character code, 2 to 4 human players, empty seats filled by bots.

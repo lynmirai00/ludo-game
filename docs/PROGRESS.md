@@ -24,9 +24,10 @@ language mid-game re-translated the whole log while the log length, token positi
 horizontal scroll; the board is 343px wide at 375px. Desktop layout (board left, controls and log right) also checked.
 
 ## Next step: Phase 3
-Before starting, the user needs to:
-1. `docker compose up -d` (not run yet; ZITADEL image is `latest`, so check that it starts).
-2. Create the Project and Application in the ZITADEL Console as in `docs/02-zitadel.md`, and put `CLIENT_ID` in `.env.local`.
+Local ZITADEL is set up and running (`docker compose up -d`, v4.19.4, http://localhost:8080, only reachable from this
+machine). The user still has to click through the Console (Project "Ludo", Application "ludo-web": User Agent + PKCE,
+redirect and post-logout URI `http://localhost:3000/`, Development Mode on, Auth Token Type JWT) and send the
+Client ID; then create `.env.local` from `.env.example`.
 Then: `lib/auth-client.ts`, `lib/server/auth.ts`, `lib/server/db.ts` (libSQL), the API route handlers, the login UI,
 saving results, the leaderboard, and `PUT /api/me/locale`. From Phase 3 on, a missing `CLIENT_ID` must stop the server
 on startup (`validateConfig()` in `lib/server/config.ts` currently only warns).
@@ -55,6 +56,15 @@ on startup (`validateConfig()` in `lib/server/config.ts` currently only warns).
   Keyboard focus moves (to Roll or the first movable token) only after game steps, never on language changes.
 - All tests use Vitest's `expect`.
 - `stats.summary` is composed from plural-aware `stats.wins` and `stats.games`.
+
+## Decisions made on 2026-10-05 (before Phase 3)
+- Database schema settled in `docs/02-zitadel.md`: ISO 8601 text timestamps, foreign key, indexes, name refreshed
+  on every login, `games.rolls` for the "Fastest wins" leaderboard (human's own rolls, per 2/3/4 players, each
+  player's best).
+- Display names never use the email address (they are public on the leaderboards); the server reads them from
+  ZITADEL's userinfo endpoint.
+- Security checklist for public deployment is in Phase 6 of `docs/03-plan.md`; Phase 4 limits unfinished matches.
+- ZITADEL's login page has no Vietnamese: send `ui_locales: 'vi en'` for Vietnamese (verified to show English).
 
 ## Things learned the hard way
 - On Japanese Windows `system-ui` is Yu Gothic UI, which breaks stacked Vietnamese diacritics → `:lang(vi)` font rule.

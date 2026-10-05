@@ -37,7 +37,11 @@ userManager.signinRedirect({ extraQueryParams: { ui_locales: currentLang === 'vi
 ```
 See `docs/04-i18n.md` for what happens if ZITADEL doesn't support a language.
 
-Display name, in order of preference: `profile.name` → `profile.preferred_username` → `profile.email`.
+Display name (shown in the top bar and **publicly on the leaderboards**), in order of preference:
+`name` → the part of `preferred_username` before any `@`. **Never show an email address**, and never use the
+`email` claim as a name: a player who never set a name would otherwise have their email published.
+The server takes the name from ZITADEL's userinfo endpoint (`GET {ZITADEL_URL}/oidc/v1/userinfo` with the player's
+access token), never from the request body. Use the same rule in the browser and on the server.
 
 ## Server-side token verification (`lib/server/auth.ts`)
 Use `jose`:
@@ -75,6 +79,7 @@ DATABASE_AUTH_TOKEN=
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
 | POST | /api/games | Yes | Record one game result `{ place, players, rolls }` (phase 3); `players` must be 2–4, `place` 1..`players` and `rolls` an integer ≥ 1, otherwise `400 INVALID_RESULT` |
 | DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |
+| DELETE | /api/me | Yes | Delete the player and all their games (privacy; phase 6) |
 
 Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_RESULT`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`. The browser maps each code to a translated message (`errors.<CODE>`).
 API routes read the database, so they must not be statically cached (`export const dynamic = 'force-dynamic'` where needed).
@@ -170,7 +175,8 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
     ports:
-      - "8080:8080"
+      # Only reachable from this machine, not from the local network.
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
