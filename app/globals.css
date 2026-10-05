@@ -218,11 +218,13 @@ body {
   overflow: hidden;
 }
 
-/* Per-color shades: a medium tint for the track, a light tint for home steps and bases. */
-.cell--red, .base--red, .base-slot--red { --c: var(--red); }
-.cell--green, .base--green, .base-slot--green { --c: var(--green); }
-.cell--yellow, .base--yellow, .base-slot--yellow { --c: var(--yellow); }
-.cell--blue, .base--blue, .base-slot--blue { --c: var(--blue); }
+/* Per-color shades: the color, a medium tint for the track, lighter tints for home steps and bases.
+   Fixed values (the color mixed with white at 62%, 40% and 28%) instead of color-mix(), which older
+   phone browsers (Safari < 16.2, Chrome < 111) do not support: the board lost its colors there. */
+.cell--red, .base--red, .base-slot--red { --c: var(--red); --c-track: #e68c8c; --c-home: #efb5b5; --c-base: #f4cbcb; }
+.cell--green, .base--green, .base-slot--green { --c: var(--green); --c-track: #7dc299; --c-home: #abd8bd; --c-base: #c4e4d1; }
+.cell--yellow, .base--yellow, .base-slot--yellow { --c: var(--yellow); --c-track: #eccc74; --c-home: #f3dea5; --c-base: #f6e8c0; }
+.cell--blue, .base--blue, .base-slot--blue { --c: var(--blue); --c-track: #7ea9d8; --c-home: #acc7e6; --c-base: #c5d8ed; }
 
 .cell {
   display: grid;
@@ -242,16 +244,7 @@ body {
   width: 84%;
   aspect-ratio: 1;
   border-radius: 50%;
-  /* Fallback first: browsers without color-mix() keep the plain color. */
-  background: var(--c);
-  opacity: 0.7;
-  background: color-mix(in srgb, var(--c) 62%, white);
-}
-
-@supports (background: color-mix(in srgb, red 50%, white)) {
-  .cell--track::before {
-    opacity: 1;
-  }
+  background: var(--c-track);
 }
 
 /* Start cells: full color with a white arrow in the direction of movement. */
@@ -275,8 +268,7 @@ body {
 .cell--home {
   margin: 8%;
   border-radius: 3px;
-  background: #eee;
-  background: color-mix(in srgb, var(--c) 40%, white);
+  background: var(--c-home);
   color: rgb(0 0 0 / 0.55);
   font-size: 2.2vw;
   font-size: min(3.6cqw, 22px);
@@ -285,8 +277,7 @@ body {
 
 .base {
   margin: 4%;
-  background: #f6f6f6;
-  background: color-mix(in srgb, var(--c) 28%, white);
+  background: var(--c-base);
   border: 6px solid var(--c);
   border: 1.6cqw solid var(--c);
   border-radius: 2px;
