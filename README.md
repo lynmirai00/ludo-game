@@ -80,6 +80,9 @@ Custom login texts cannot add a language ZITADEL does not support.
 - **After logging in, the top bar says the session has expired:** check that the application's Auth Token Type is
   **JWT**, and look at the server log for `Rejected access token: ...`, which names the failing check
   (for example the `aud` claim when `CLIENT_ID` does not match the application).
+- **No email arrives in Mailpit:** run `docker logs ludo-game-zitadel-1` and look for `sending notification failed`.
+  `CouldNotSetSender ... not a valid RFC 5321 address` means the provider's **Sender email** is not a plain address
+  (check for spaces, or a name in that field). ZITADEL keeps retrying, so the email arrives as soon as it is fixed.
 - **"Can't reach the login server":** ZITADEL is not running or not reachable at `ZITADEL_URL`.
   The game still works as a guest.
 
