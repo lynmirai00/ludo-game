@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-10-05, at a planned pause. **Read this first when resuming work.**
+Last updated: 2026-10-05, at a planned pause (after the new layout). **Read this first when resuming work.**
 
 ## Status at a glance
 Phases 1–6 of `docs/03-plan.md` are done; the game is live. Only the optional Phase 7 is left.
@@ -14,10 +14,12 @@ Phases 1–6 of `docs/03-plan.md` are done; the game is live. Only the optional 
 | 4. Anti-cheat (server-side matches), replay, resume after reload | ✅ Done, end-to-end tested |
 | 5. Admin role ("Reset leaderboards") | ✅ Done, tried with a real admin and a normal account |
 | 6. Deploy to Vercel + security checklist | ✅ Done, live and checked |
+| — Phone fixes (blank page, board colors) | ✅ Done, confirmed on the user's phone |
+| — New layout: header with ☰ menu, pages over the game, "How to play" | ✅ Done and live; logged-in pages still to be checked by the user |
 | 7. Online multiplayer (optional) | ⏸️ Not started; **needs a decision first** (see "Next step") |
 
-Checks at the pause: `npm test` **124/124** (5 files), `npm run typecheck` and `npm run build` clean, `npm audit` clean,
-all dependencies on their latest patch. Last commit before this note: `991c02e`; everything is pushed to `origin/main`.
+Checks at the pause: `npm test` **125/125** (5 files), `npm run typecheck` and `npm run build` clean, `npm audit` clean,
+all dependencies on their latest patch. The live site runs the latest `main` (new layout, commit `beafed5`); everything is pushed to `origin/main`.
 
 ## Live environment (production)
 | Part | Where | Notes |
@@ -101,6 +103,8 @@ change, Leaderboard and Rules pages, Back and Escape, game state unchanged, no C
 Not yet seen with a real login: the My games and Account pages in the new layout.
 
 ## Small open items
+- **Check with a real login on the live site:** the "My games" page (list, Replay button) and the "Account" page
+  (name, stats, "Your data", Log out) in the new layout. As a guest everything was checked.
 - Not yet seen in a browser: the "The others are still playing for the remaining places." hint (needs the human to
   finish while 2+ bots remain); the logic is simple and the texts exist.
 - Delete the local test account in the local ZITADEL Console, if not done yet.
