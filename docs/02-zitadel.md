@@ -69,10 +69,10 @@ DATABASE_AUTH_TOKEN=
 | Method | Path | Auth required | Description |
 |---|---|---|---|
 | GET | /api/config | No | `{ zitadelUrl, clientId }` |
-| GET | /api/leaderboard | No | Top 10 by wins; ties broken by fewer games played |
-| GET | /api/me | Yes | `{ id, name, wins, games, locale }` |
+| GET | /api/leaderboard | No | Top 10 by wins (games finished in 1st place); ties broken by fewer games played |
+| GET | /api/me | Yes | `{ id, name, wins, games, locale }` (wins = 1st places) |
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
-| POST | /api/games | Yes | Record one game result (phase 3) |
+| POST | /api/games | Yes | Record one game result `{ place, players }` (phase 3); `players` must be 2–4 and `place` 1..`players`, otherwise `400 INVALID_RESULT` |
 | DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |
 
 Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_RESULT`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`. The browser maps each code to a translated message (`errors.<CODE>`).
@@ -83,7 +83,8 @@ Use `@libsql/client`. The same code and SQL work against a local file (`DATABASE
 and against Turso in production (`DATABASE_URL=libsql://...` plus `DATABASE_AUTH_TOKEN`).
 Create the tables on first use (`CREATE TABLE IF NOT EXISTS`); tests use an in-memory database (`file::memory:`).
 - `players(id TEXT PRIMARY KEY  -- = sub, name TEXT, locale TEXT  -- 'en' | 'vi' | 'ja', created_at)`
-- `games(id INTEGER PRIMARY KEY, player_id TEXT, result TEXT CHECK(result IN ('win','lose')), opponents INTEGER, finished_at)`
+- `games(id INTEGER PRIMARY KEY, player_id TEXT, place INTEGER CHECK(place BETWEEN 1 AND 4), players INTEGER CHECK(players BETWEEN 2 AND 4), finished_at)`
+  (`place` is the human's finishing place, `players` the number of players in that game)
 The leaderboard is a GROUP BY query over `games`.
 
 ## ZITADEL setup for local development (done by the user in the Console; Claude Code only documents it in the README)
