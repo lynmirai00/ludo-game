@@ -83,8 +83,8 @@ Accept-Language), `app/error.tsx` / `app/global-error.tsx` crash screens with th
 notice, no `findLast` / `Object.hasOwn` / `AbortSignal.timeout` in our code, small polyfills in
 `instrumentation-client.ts`, browserslist lowered to Safari 15 / Chrome 90, CSS fallbacks for `color-mix()` and `cqw`.
 Checked in Chrome: normal load (no hydration warnings, no CSP violations), built-ins removed to mimic an old browser
-(the game still plays), a forced render crash (the error screen shows). **Still to confirm on the user's phone**; if it
-still fails, the error screen now shows the technical message — ask for it and for the phone model and browser.
+(the game still plays), a forced render crash (the error screen shows). **Confirmed by the user on their phone**
+(page and board colors). If a phone shows the error screen, ask for its technical message and the phone model and browser.
 Follow-up: the page then worked on the phone but the board had **no colors**: its browser lacks CSS `color-mix()`
 (Safari < 16.2 / Chrome < 111). Replaced every `color-mix()` with fixed tints per color (`--c-track`, `--c-home`,
 `--c-base`, the same values color-mix produced), so the board looks identical on new browsers. Rule: avoid CSS
