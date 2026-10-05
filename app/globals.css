@@ -626,3 +626,21 @@ body {
     align-items: start;
   }
 }
+
+/* ---- Admin -------------------------------------------------------------- */
+
+.admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.btn--danger {
+  border-color: var(--red);
+  color: var(--red);
+  font-weight: 700;
+}

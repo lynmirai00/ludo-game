@@ -75,7 +75,7 @@ DATABASE_AUTH_TOKEN=
 |---|---|---|---|
 | GET | /api/config | No | `{ zitadelUrl, clientId }` |
 | GET | /api/leaderboard | No | Both leaderboards in one response, see "Leaderboards" below |
-| GET | /api/me | Yes | `{ id, name, wins, games, locale }` (wins = 1st places) |
+| GET | /api/me | Yes | `{ id, name, wins, games, locale, admin }` (wins = 1st places; `admin` comes from the verified token's roles) |
 | GET | /api/me/games | Yes | The player's own 20 most recent results, newest first: `[{ place, players, rolls, finishedAt, matchId }]` (`matchId` is null for results saved before phase 4) |
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
 | POST | /api/matches | Yes | Start a match `{ players: 2 \| 3 \| 4 }` (phase 4); returns a match view (see "Matches") |
@@ -83,7 +83,7 @@ DATABASE_AUTH_TOKEN=
 | GET | /api/matches/:id | Yes, owner | The match view, e.g. to replay a finished game |
 | POST | /api/matches/:id/roll | Yes, owner | The server rolls for the human, then plays the bots; returns the new actions |
 | POST | /api/matches/:id/move | Yes, owner | `{ token }`: moves one of the human's tokens, then the bots play; returns the new actions |
-| DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |
+| DELETE | /api/leaderboard | Yes, admin role | Reset both leaderboards (phase 5): only games finished after now count; players keep their history and stats. Returns `{ since }` |
 | DELETE | /api/me | Yes | Delete the player and all their games (privacy; phase 6) |
 
 Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_REQUEST`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`, `CONFLICT`, `MATCH_OVER`. The browser maps each code to a translated message (`errors.<CODE>`).
@@ -124,6 +124,10 @@ CREATE TABLE IF NOT EXISTS matches (                              -- phase 4, cr
   updated_at   TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS matches_player ON matches(player_id, status, updated_at);
+CREATE TABLE IF NOT EXISTS settings (                             -- phase 5
+  key   TEXT PRIMARY KEY,                                         -- e.g. leaderboard_since
+  value TEXT NOT NULL
+);
 ```
 - Turn on foreign keys for every connection (`PRAGMA foreign_keys = ON`); SQLite leaves them off by default.
 - Upsert the player (`INSERT ... ON CONFLICT(id) DO UPDATE SET name = excluded.name`) whenever a verified token
@@ -168,7 +172,9 @@ There are two leaderboards, both GROUP BY queries over `games` joined with `play
   }
 }
 ```
-"Clear leaderboard" (phase 5) deletes all rows of `games`, which empties both leaderboards.
+"Reset leaderboards" (phase 5) deletes nothing: it stores the reset time in `settings` (key `leaderboard_since`),
+and both leaderboard queries only count games with `finished_at` after it. "My games", replays and each player's
+own wins/games stay as they are.
 
 ## ZITADEL setup for local development (done by the user in the Console; Claude Code only documents it in the README)
 1. `docker compose up -d`, open http://localhost:8080/ui/console, log in with `zitadel-admin@zitadel.localhost` / `Password1!`.
@@ -257,7 +263,11 @@ Notes (checked on 2026-10-05 with v4.19.4):
 - In the Project, enable "Assert Roles on Authentication" so roles are included in the token.
 - Roles appear in the claim `urn:zitadel:iam:org:project:roles` (an object whose keys are role names).
 - `requireRole(user, 'admin')` checks this claim and returns `403` if the role is missing.
-- The UI shows the "Clear leaderboard" button only to admins, but the server is the one that enforces it.
+- `GET /api/me` returns `admin: true` when the verified token has the role, so the browser knows whether to show the
+  button; it never decides on its own.
+- The UI shows the "Reset leaderboards" button only to admins (with a confirmation), but the server is the one
+  that enforces it: `DELETE /api/leaderboard` without the role is `403 FORBIDDEN`.
+- Role changes only reach the token at the next login: after granting the role, log out and in again.
 
 ## Auth tests (`test/api.test.ts`)
 Never call a real ZITADEL in tests. Generate a key pair with `jose.generateKeyPair`, sign fake tokens,

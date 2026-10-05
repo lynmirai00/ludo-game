@@ -157,7 +157,7 @@ describe('token verification', () => {
 
   test('valid token → 200 and the player is the token subject', async () => {
     profiles['user-1'] = { name: 'An Nguyen' };
-    expect(await me(await token())).toEqual({ id: 'user-1', name: 'An Nguyen', wins: 0, games: 0, locale: null });
+    expect(await me(await token())).toEqual({ id: 'user-1', name: 'An Nguyen', wins: 0, games: 0, locale: null, admin: false });
   });
 
   test('roles come from the ZITADEL roles claim; requireRole throws 403 without the role', async () => {
@@ -481,6 +481,49 @@ describe('GET /api/leaderboard', () => {
     const { mostWins, fastestWins } = await leaderboards();
     expect(mostWins).toHaveLength(10);
     expect(fastestWins['2'].map((row) => row.name)).toEqual(['P0', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9']);
+  });
+});
+
+describe('admin: DELETE /api/leaderboard', () => {
+  const adminToken = (sub = 'boss') => token({ sub, claims: { [ROLES_CLAIM]: { admin: { org1: 'example.com' } } } });
+  const reset = (bearer?: string) => api.resetLeaderboards(request('/api/leaderboard', { method: 'DELETE', bearer }));
+  const boards = async (): Promise<Leaderboards> => (await api.getLeaderboard(request('/api/leaderboard'))).json();
+
+  test('GET /api/me tells the browser whether the verified token has the admin role', async () => {
+    expect((await me(await adminToken())).admin).toBe(true);
+    expect((await me(await token())).admin).toBe(false);
+  });
+
+  test('needs a token, and a token without the admin role gets 403 FORBIDDEN', async () => {
+    expect((await reset()).status).toBe(401);
+    const res = await reset(await token());
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: { code: 'FORBIDDEN' } });
+    // Another role is not enough either.
+    const other = await token({ claims: { [ROLES_CLAIM]: { moderator: {} } } });
+    expect((await reset(other)).status).toBe(403);
+  });
+
+  test('an admin resets both leaderboards; players keep their history and stats; later games count again', async () => {
+    const player = await token({ sub: 'p1' });
+    profiles['p1'] = { name: 'Phuong' };
+    await saveGame(player, { place: 1, players: 2, rolls: 30 });
+    await saveGame(player, { place: 1, players: 4, rolls: 50 });
+    expect((await boards()).mostWins).toHaveLength(1);
+
+    const res = await reset(await adminToken());
+    expect(res.status).toBe(200);
+    expect((await res.json()).since).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+    expect(await boards()).toEqual({ mostWins: [], fastestWins: { 2: [], 3: [], 4: [] } });
+    expect(await me(player)).toMatchObject({ wins: 2, games: 2 });
+    const history = await (await api.getMyGames(request('/api/me/games', { bearer: player }))).json();
+    expect(history).toHaveLength(2);
+
+    await saveGame(player, { place: 1, players: 2, rolls: 44 });
+    const after = await boards();
+    expect(after.mostWins).toEqual([{ name: 'Phuong', wins: 1, games: 1 }]);
+    expect(after.fastestWins['2'].map((row) => row.rolls)).toEqual([44]);
   });
 });
 

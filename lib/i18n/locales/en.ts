@@ -101,7 +101,9 @@ const en = {
     rolls: { one: '{count} roll', other: '{count} rolls' },
   },
   admin: {
-    clearLeaderboard: 'Clear leaderboard',
+    clearLeaderboard: 'Reset leaderboards',
+    confirmClear: 'Reset both leaderboards? Players keep their own history and stats.',
+    cleared: 'The leaderboards were reset.',
   },
   errors: {
     NOT_FOUND: 'That game doesn\'t exist anymore.',

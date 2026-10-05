@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS matches (
   updated_at   TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS matches_player ON matches(player_id, status, updated_at);
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS games (
   id          INTEGER PRIMARY KEY,
   player_id   TEXT NOT NULL REFERENCES players(id),
@@ -66,13 +70,16 @@ export type Db = {
   /** Creates the player or refreshes their name. */
   upsertPlayer(player: { id: string; name: string }, now: Date): Promise<void>;
   hasPlayer(id: string): Promise<boolean>;
-  getMe(id: string): Promise<Me | null>;
+  getMe(id: string): Promise<Omit<Me, 'admin'> | null>;
   setLocale(id: string, locale: Locale): Promise<void>;
   /** Inserts a result directly (only used to seed tests; the API records results through saveMatch). */
   addGame(playerId: string, result: GameResult, finishedAt: Date, matchId?: string): Promise<void>;
   /** The player's most recent results, newest first. */
   listGames(playerId: string): Promise<GameRecord[]>;
+  /** Both leaderboards, counting only games finished after the last reset. */
   leaderboards(): Promise<Leaderboards>;
+  /** Admin: from now on the leaderboards only count new games. No game data is deleted. Returns the reset time. */
+  resetLeaderboards(now: Date): Promise<string>;
   /** Starts a match, abandoning the player's oldest active ones beyond MAX_ACTIVE_MATCHES. */
   createMatch(match: { id: string; playerId: string; players: number }, now: Date): Promise<MatchRow>;
   getMatch(id: string): Promise<MatchRow | null>;
@@ -111,6 +118,12 @@ export function createDb(client: Client): Db {
     }
   }
   const init = () => (ready ??= setUp());
+
+  /** A stored setting, or '' (which sorts before every ISO timestamp) when unset. */
+  async function setting(key: string): Promise<string> {
+    const { rows } = await client.execute({ sql: 'SELECT value FROM settings WHERE key = ?', args: [key] });
+    return rows[0] ? str(rows[0], 'value') : '';
+  }
 
   return {
     async upsertPlayer({ id, name }, now) {
@@ -179,13 +192,15 @@ export function createDb(client: Client): Db {
 
     async leaderboards() {
       await init();
+      const since = await setting('leaderboard_since');
       // Most wins: games finished 1st; ties go to fewer games played.
       const mostWins = await client.execute({
         sql: `SELECT p.name, SUM(g.place = 1) AS wins, COUNT(*) AS games
               FROM games g JOIN players p ON p.id = g.player_id
+              WHERE g.finished_at > ?
               GROUP BY g.player_id HAVING wins > 0
               ORDER BY wins DESC, games ASC, p.id ASC LIMIT ?`,
-        args: [TOP],
+        args: [since, TOP],
       });
 
       // Fastest wins, per player count: each player's best (fewest rolls) win; ties go to whoever got there first.
@@ -194,12 +209,13 @@ export function createDb(client: Client): Db {
         const { rows } = await client.execute({
           sql: `SELECT p.name, g.rolls, g.finished_at
                 FROM games g JOIN players p ON p.id = g.player_id
-                WHERE g.players = ? AND g.place = 1
+                WHERE g.players = ? AND g.place = 1 AND g.finished_at > ?
                   AND g.id = (SELECT b.id FROM games b
                               WHERE b.player_id = g.player_id AND b.players = g.players AND b.place = 1
+                                AND b.finished_at > ?
                               ORDER BY b.rolls ASC, b.finished_at ASC, b.id ASC LIMIT 1)
                 ORDER BY g.rolls ASC, g.finished_at ASC LIMIT ?`,
-          args: [players, TOP],
+          args: [players, since, since, TOP],
         });
         fastestWins[`${players}`] = rows.map((row) => ({
           name: str(row, 'name'),
@@ -212,6 +228,17 @@ export function createDb(client: Client): Db {
         mostWins: mostWins.rows.map((row) => ({ name: str(row, 'name'), wins: num(row, 'wins'), games: num(row, 'games') })),
         fastestWins,
       };
+    },
+
+    async resetLeaderboards(now) {
+      await init();
+      const since = now.toISOString();
+      await client.execute({
+        sql: `INSERT INTO settings (key, value) VALUES ('leaderboard_since', ?)
+              ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+        args: [since],
+      });
+      return since;
     },
 
     async createMatch({ id, playerId, players }, now) {

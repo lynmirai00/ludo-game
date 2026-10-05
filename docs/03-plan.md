@@ -63,7 +63,10 @@ Done when: it is impossible to record a win by calling the API directly without 
 ## Phase 5: Admin role
 Follow the "Permissions" section in `docs/02-zitadel.md`.
 
-Done when: an account with the admin role sees and can use "Clear leaderboard"; a normal account gets 403 from the API.
+"Reset leaderboards" only resets the two leaderboards (see "Leaderboards" in `docs/02-zitadel.md`); no game data is deleted.
+
+Done when: an account with the admin role sees and can use "Reset leaderboards"; a normal account does not see it
+and gets 403 from the API; players keep their history and stats after a reset.
 
 ## Phase 6: Deploy to Vercel
 Follow "Deployment to Vercel" in `docs/02-zitadel.md`.

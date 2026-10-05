@@ -101,7 +101,9 @@ const vi: Locale = {
     rolls: { other: '{count} lượt gieo' },
   },
   admin: {
-    clearLeaderboard: 'Xóa bảng xếp hạng',
+    clearLeaderboard: 'Đặt lại bảng xếp hạng',
+    confirmClear: 'Đặt lại cả hai bảng xếp hạng? Lịch sử và thành tích riêng của người chơi vẫn được giữ.',
+    cleared: 'Đã đặt lại bảng xếp hạng.',
   },
   errors: {
     NOT_FOUND: 'Ván này không còn tồn tại.',

@@ -9,7 +9,15 @@ export function isLocale(value: unknown): value is Locale {
 }
 
 /** GET /api/me */
-export type Me = { id: string; name: string; wins: number; games: number; locale: Locale | null };
+export type Me = {
+  id: string;
+  name: string;
+  wins: number;
+  games: number;
+  locale: Locale | null;
+  /** From the verified token's roles; only tells the UI what to show, the server still checks. */
+  admin: boolean;
+};
 
 /** A saved result: the human's place, the number of players and the human's own roll count. */
 export type GameResult = { place: number; players: number; rolls: number };

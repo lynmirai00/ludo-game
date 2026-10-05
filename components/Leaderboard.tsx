@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { PLAYER_COUNTS, type Leaderboards, type PlayerCount } from '@/lib/api';
 import { ApiCallError, apiFetch } from '@/lib/auth-client';
-import { errorKey } from '@/lib/i18n';
+import { errorKey, type MessageKey } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import { useAuth } from './AuthProvider';
 
@@ -11,7 +11,10 @@ type Board = 'mostWins' | 'fastestWins';
 
 export function Leaderboard() {
   const { t, lang } = useI18n();
-  const { resultsVersion } = useAuth();
+  const { resultsVersion, me, call } = useAuth();
+  const [reloads, setReloads] = useState(0);
+  // A key, not text, so it follows language changes like everything else.
+  const [notice, setNotice] = useState<MessageKey | null>(null);
   const [data, setData] = useState<Leaderboards | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [board, setBoard] = useState<Board>('mostWins');
@@ -30,7 +33,19 @@ export function Leaderboard() {
     return () => {
       active = false;
     };
-  }, [resultsVersion]);
+  }, [resultsVersion, reloads]);
+
+  // Admins only (the server checks the role again): reset both leaderboards after a confirmation.
+  async function reset() {
+    if (!window.confirm(t('admin.confirmClear'))) return;
+    try {
+      await call('/api/leaderboard', { method: 'DELETE' });
+      setNotice('admin.cleared');
+      setReloads((n) => n + 1);
+    } catch (e) {
+      setNotice(errorKey(e instanceof ApiCallError ? e.code : 'UNKNOWN'));
+    }
+  }
 
   const number = new Intl.NumberFormat(lang);
   const rows =
@@ -87,6 +102,18 @@ export function Leaderboard() {
             </li>
           ))}
         </ol>
+      )}
+      {me?.admin && (
+        <div className="admin-tools">
+          <button type="button" className="btn btn--small btn--danger" onClick={() => void reset()}>
+            {t('admin.clearLeaderboard')}
+          </button>
+          {notice && (
+            <p className="hint" role="status">
+              {t(notice)}
+            </p>
+          )}
+        </div>
       )}
     </section>
   );

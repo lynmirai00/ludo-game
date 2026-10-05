@@ -3,7 +3,7 @@ import { HUMAN, SEATS, isLocale, isPlayerCount, type ActionsResponse, type Match
 import { playBots } from '@/lib/bot';
 import { displayName } from '@/lib/display-name';
 import { IllegalMoveError, applyAction, replay, rollCount, type Action, type Color, type GameState } from '@/lib/game';
-import type { Auth, AuthUser, FetchProfile } from './auth';
+import { requireRole, type Auth, type AuthUser, type FetchProfile } from './auth';
 import type { Db, MatchRow } from './db';
 import { ApiError, toErrorResponse } from './errors';
 
@@ -120,7 +120,7 @@ export function createHandlers({ auth, db, fetchProfile, now, rollDie, newId }: 
       await refreshPlayer(user);
       const me = await db.getMe(user.id);
       if (!me) throw new ApiError(404, 'NOT_FOUND');
-      return Response.json(me);
+      return Response.json({ ...me, admin: user.roles.includes('admin') });
     }),
 
     /** PUT /api/me/locale { locale } */
@@ -174,6 +174,13 @@ export function createHandlers({ auth, db, fetchProfile, now, rollDie, newId }: 
       const token = (await readJson(request, 'ILLEGAL_MOVE')).token;
       if (typeof token !== 'number') throw new ApiError(400, 'ILLEGAL_MOVE');
       return play(user, matchId, () => ({ move: token }));
+    }),
+
+    /** DELETE /api/leaderboard: admin only; resets both leaderboards without deleting any game. */
+    resetLeaderboards: handle(async (request) => {
+      const user = await auth.requireUser(request);
+      requireRole(user, 'admin');
+      return Response.json({ since: await db.resetLeaderboards(now()) });
     }),
 
     /** GET /api/leaderboard: public. */

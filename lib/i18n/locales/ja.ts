@@ -102,6 +102,8 @@ const ja: Locale = {
   },
   admin: {
     clearLeaderboard: 'ランキングをリセット',
+    confirmClear: '両方のランキングをリセットしますか？各プレイヤーの履歴と成績はそのまま残ります。',
+    cleared: 'ランキングをリセットしました。',
   },
   errors: {
     NOT_FOUND: 'このゲームはもう存在しません。',

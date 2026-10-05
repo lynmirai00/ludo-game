@@ -12,7 +12,7 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
 | Phase 3: ZITADEL login and saved results | ✅ Done: real login and a saved result confirmed (2026-10-05) |
 | Phase 4: anti-cheat, replay, resume after reload | ✅ Done (2026-10-05) |
-| Phase 5: admin role | ⏭️ **Next step** |
+| Phase 5: admin role | 🟡 Code done and tested (115 tests); **waiting for the user to set up the admin role in ZITADEL and try it** |
 | Phases 6–7 | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
