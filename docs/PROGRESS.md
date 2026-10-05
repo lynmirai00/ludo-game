@@ -10,7 +10,7 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from an earlier plain-JS version, since deleted) |
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
-| Phase 3: ZITADEL login and saved results | 🟡 Code done and tested; **waiting for the user to try a real login** |
+| Phase 3: ZITADEL login and saved results | 🟡 Real login confirmed by the user (2026-10-05); **saving a result while logged in not yet tried** |
 | Phase 4: anti-cheat | ⏭️ Next after Phase 3 is confirmed |
 | Phases 5–7 | Not started |
 
@@ -32,6 +32,13 @@ Not verifiable without the user's password: a **real login** (JWT token type, th
 CLIENT_ID, userinfo name, saving a result, language restore). If it fails, the top bar shows the error and the
 server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
+
+## Real login check (2026-10-05)
+The user logged in with a new account and the admin account. In `data/game.db`: 2 players, no name containing "@",
+both with a saved language, **0 games saved** — the "Result saved" path still needs one game finished while logged in
+(then: the stats in the top bar go up, the leaderboard shows the player after a 1st place).
+Local email: Mailpit catches ZITADEL's emails (http://localhost:8025); the SMTP provider is set up in the Console
+with host `localhost:1025`, user/password `ludo`, sender `noreply@ludo.localhost`.
 
 ## Board layout (changed 2026-10-05, after Phase 3)
 The board now follows the user's reference picture of a traditional Vietnamese board: bases Blue top-left,
