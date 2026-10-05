@@ -47,7 +47,7 @@ admin role on the live site.
 Gotchas: a new ZITADEL Cloud instance has no SMTP provider (no emails at all until one is added); Vercel's
 Node.js setting moved, but `engines.node` in package.json already selects Node 22+; the Vercel URL got a prefix
 (`ludo-ludo-game`), so the ZITADEL redirect URIs had to match it.
-Open: confirm whether the Vercel Firewall rate-limit rule for `/api` was added (depends on the plan).
+Vercel Firewall rate limit on `/api`: added by the user and verified (60 requests pass, the 61st within a minute gets 429; pages are not limited).
 
 ## Phase 5 (done 2026-10-05)
 "Reset leaderboards" (admin only) stores `leaderboard_since` in `settings`; nothing is deleted. In ZITADEL v4 the
