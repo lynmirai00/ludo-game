@@ -177,16 +177,21 @@ services:
     ports:
       # Only reachable from this machine, not from the local network.
       - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8025:8025" # Mailpit web UI (Mailpit shares this container's network)
     depends_on:
       db:
         condition: service_healthy
   # Local mail catcher: ZITADEL sends its emails (verification codes, password resets) here.
   # Read them at http://localhost:8025. Nothing leaves this machine.
+  # It shares ZITADEL's network, so ZITADEL reaches it as localhost:1025: ZITADEL requires an
+  # SMTP user, and Go only sends credentials over plain SMTP to localhost. Any user/password works.
   mailpit:
     image: axllent/mailpit:v1.31.4
     restart: always
-    ports:
-      - "127.0.0.1:8025:8025"
+    network_mode: "service:zitadel"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
   db:
     image: postgres:17
     restart: always

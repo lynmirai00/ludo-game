@@ -59,8 +59,9 @@ email ZITADEL sends; read them at http://localhost:8025. Connect ZITADEL to it o
 
 1. **Default Settings** (instance settings) → **SMTP Provider** (in some versions under **Notification Providers**).
 2. Add a **Generic SMTP** provider:
-   - Host and port: `mailpit:1025`
-   - TLS: off; user and password: empty
+   - Host and port: `localhost:1025` (Mailpit shares ZITADEL's network, so for ZITADEL it is on localhost)
+   - TLS: off
+   - User: `ludo`, password: `ludo` (ZITADEL requires a user; Mailpit accepts any)
    - Sender email: `noreply@ludo.localhost`, sender name: `Ludo`
 3. Save, then **Activate** the provider (an inactive provider sends nothing).
 
