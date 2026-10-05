@@ -7,7 +7,7 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 |---|---|
 | Docs switched to Next.js + TypeScript + libSQL + Vercel | ✅ Done |
 | Phase 1: project skeleton and i18n | ✅ Done |
-| Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from the plain-JS branch `phase-2-game`) |
+| Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from an earlier plain-JS version, since deleted) |
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
 | Phase 3: ZITADEL login and saved results | ⏭️ **Next step** |
@@ -69,5 +69,4 @@ on startup (`validateConfig()` in `lib/server/config.ts` currently only warns).
 - The Bash tool's heredocs can drop a backslash (`\\` → `\`); write files containing regexes with the Write tool.
 
 ## Open decisions (ask the user)
-- Delete branch `phase-2-game` (locally and on origin): the port is done, so it is no longer needed.
-  The user asked earlier to delete old branches; confirm before deleting.
+- None right now.

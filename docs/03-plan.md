@@ -3,9 +3,6 @@
 Work through the phases in order. After each phase: run `npm test`, `npm run typecheck` and `npm run build`,
 check the acceptance criteria below, summarize what you did, then STOP and wait for the user to confirm before continuing.
 
-A first version of Phases 1 and 2 was built in plain JavaScript with Express (branch `phase-2-game`).
-Port its game rules, bot, tests, translations and CSS rather than rewriting them from scratch.
-
 ## Phase 1: Project skeleton
 - Create a Next.js (App Router) + TypeScript project: `package.json` (scripts: dev, build, start, test, typecheck),
   `tsconfig.json` (strict), `vitest.config.ts`, `.gitignore` (node_modules, .next, .env*, data/; keep `.env.example`),
