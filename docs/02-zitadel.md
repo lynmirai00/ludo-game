@@ -82,10 +82,29 @@ API routes read the database, so they must not be statically cached (`export con
 Use `@libsql/client`. The same code and SQL work against a local file (`DATABASE_URL=file:./data/game.db`)
 and against Turso in production (`DATABASE_URL=libsql://...` plus `DATABASE_AUTH_TOKEN`).
 Create the tables on first use (`CREATE TABLE IF NOT EXISTS`); tests use an in-memory database (`file::memory:`).
-- `players(id TEXT PRIMARY KEY  -- = sub, name TEXT, locale TEXT  -- 'en' | 'vi' | 'ja', created_at)`
-- `games(id INTEGER PRIMARY KEY, player_id TEXT, place INTEGER CHECK(place BETWEEN 1 AND 4), players INTEGER CHECK(players BETWEEN 2 AND 4), finished_at)`
-  (`place` is the human's finishing place, `players` the number of players in that game)
-The leaderboard is a GROUP BY query over `games`.
+Schema (SQLite has no date type: timestamps are TEXT in ISO 8601 UTC, e.g. `2026-10-05T09:30:00.000Z`):
+```sql
+CREATE TABLE IF NOT EXISTS players (
+  id         TEXT PRIMARY KEY,                       -- the token's `sub`
+  name       TEXT NOT NULL,                          -- display name from ZITADEL, refreshed on every login
+  locale     TEXT CHECK (locale IN ('en', 'vi', 'ja')),  -- NULL until the player picks a language
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS games (
+  id          INTEGER PRIMARY KEY,
+  player_id   TEXT NOT NULL REFERENCES players(id),
+  place       INTEGER NOT NULL CHECK (place BETWEEN 1 AND 4),     -- the human's finishing place
+  players     INTEGER NOT NULL CHECK (players BETWEEN 2 AND 4),   -- number of players in that game
+  finished_at TEXT NOT NULL,
+  CHECK (place <= players)
+);
+CREATE INDEX IF NOT EXISTS games_player_id ON games(player_id);
+```
+- Turn on foreign keys for every connection (`PRAGMA foreign_keys = ON`); SQLite leaves them off by default.
+- Upsert the player (`INSERT ... ON CONFLICT(id) DO UPDATE SET name = excluded.name`) whenever a verified token
+  reaches `GET /api/me`, so a name changed in ZITADEL shows up on the next login.
+The leaderboard is a GROUP BY query over `games` joined with `players`: wins = number of games with `place = 1`,
+ordered by wins (descending), then by games played (ascending), top 10.
 
 ## ZITADEL setup for local development (done by the user in the Console; Claude Code only documents it in the README)
 1. `docker compose up -d`, open http://localhost:8080/ui/console, log in with `zitadel-admin@zitadel.localhost` / `Password1!`.
