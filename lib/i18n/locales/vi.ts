@@ -75,6 +75,19 @@ const vi: Locale = {
     saved: 'Đã lưu kết quả vào tài khoản của bạn.',
     notSaved: 'Bạn chưa đăng nhập nên kết quả không được lưu.',
   },
+  match: {
+    resumed: 'Đã mở lại ván bạn đang chơi dở.',
+  },
+  replay: {
+    button: 'Xem lại',
+    title: 'Xem lại ván đấu',
+    play: 'Phát',
+    pause: 'Tạm dừng',
+    prev: 'Bước trước',
+    next: 'Bước sau',
+    position: 'Bước {current}/{total}',
+    close: 'Quay lại ván chơi',
+  },
   history: {
     title: 'Lịch sử của tôi',
     empty: 'Chưa có ván nào. Hãy chơi hết một ván khi đã đăng nhập.',
@@ -91,6 +104,9 @@ const vi: Locale = {
     clearLeaderboard: 'Xóa bảng xếp hạng',
   },
   errors: {
+    NOT_FOUND: 'Ván này không còn tồn tại.',
+    CONFLICT: 'Ván này vừa được cập nhật ở nơi khác, đã tải lại trạng thái mới nhất.',
+    MATCH_OVER: 'Ván này đã kết thúc.',
     UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.',
     FORBIDDEN: 'Bạn không có quyền làm việc này.',
     ILLEGAL_MOVE: 'Nước đi này không hợp lệ.',

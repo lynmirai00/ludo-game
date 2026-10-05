@@ -76,13 +76,17 @@ DATABASE_AUTH_TOKEN=
 | GET | /api/config | No | `{ zitadelUrl, clientId }` |
 | GET | /api/leaderboard | No | Both leaderboards in one response, see "Leaderboards" below |
 | GET | /api/me | Yes | `{ id, name, wins, games, locale }` (wins = 1st places) |
-| GET | /api/me/games | Yes | The player's own 20 most recent results, newest first: `[{ place, players, rolls, finishedAt }]` |
+| GET | /api/me/games | Yes | The player's own 20 most recent results, newest first: `[{ place, players, rolls, finishedAt, matchId }]` (`matchId` is null for results saved before phase 4) |
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
-| POST | /api/games | Yes | Record one game result `{ place, players, rolls }` (phase 3); `players` must be 2–4, `place` 1..`players` and `rolls` an integer ≥ 1, otherwise `400 INVALID_RESULT` |
+| POST | /api/matches | Yes | Start a match `{ players: 2 \| 3 \| 4 }` (phase 4); returns a match view (see "Matches") |
+| GET | /api/matches/current | Yes | `{ match }`: the player's latest unfinished match, or `null` |
+| GET | /api/matches/:id | Yes, owner | The match view, e.g. to replay a finished game |
+| POST | /api/matches/:id/roll | Yes, owner | The server rolls for the human, then plays the bots; returns the new actions |
+| POST | /api/matches/:id/move | Yes, owner | `{ token }`: moves one of the human's tokens, then the bots play; returns the new actions |
 | DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |
 | DELETE | /api/me | Yes | Delete the player and all their games (privacy; phase 6) |
 
-Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_RESULT`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`. The browser maps each code to a translated message (`errors.<CODE>`).
+Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_REQUEST`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`, `CONFLICT`, `MATCH_OVER`. The browser maps each code to a translated message (`errors.<CODE>`).
 API routes read the database, so they must not be statically cached (`export const dynamic = 'force-dynamic'` where needed).
 
 ## Database (libSQL / SQLite)
@@ -103,15 +107,47 @@ CREATE TABLE IF NOT EXISTS games (
   place       INTEGER NOT NULL CHECK (place BETWEEN 1 AND 4),     -- the human's finishing place
   players     INTEGER NOT NULL CHECK (players BETWEEN 2 AND 4),   -- number of players in that game
   rolls       INTEGER NOT NULL CHECK (rolls >= 1),                -- the human's rolls until their place was decided
+  match_id    TEXT REFERENCES matches(id),                       -- the match it came from (phase 4)
   finished_at TEXT NOT NULL,
   CHECK (place <= players)
 );
 CREATE INDEX IF NOT EXISTS games_player_id ON games(player_id);
 CREATE INDEX IF NOT EXISTS games_fastest ON games(players, place, rolls);
+CREATE TABLE IF NOT EXISTS matches (                              -- phase 4, created before games
+  id           TEXT PRIMARY KEY,                                  -- random UUID
+  player_id    TEXT NOT NULL REFERENCES players(id),
+  players      INTEGER NOT NULL CHECK (players BETWEEN 2 AND 4),
+  actions      TEXT NOT NULL,                                     -- JSON array, see "Matches"
+  action_count INTEGER NOT NULL,                                  -- for optimistic concurrency
+  status       TEXT NOT NULL CHECK (status IN ('active', 'finished', 'abandoned')),
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS matches_player ON matches(player_id, status, updated_at);
 ```
 - Turn on foreign keys for every connection (`PRAGMA foreign_keys = ON`); SQLite leaves them off by default.
 - Upsert the player (`INSERT ... ON CONFLICT(id) DO UPDATE SET name = excluded.name`) whenever a verified token
   reaches `GET /api/me`, so a name changed in ZITADEL shows up on the next login.
+## Matches (phase 4)
+A logged-in player's game runs on the server, so nobody can report a result they did not play.
+- A match stores only its **actions**: `{ "roll": 1..6 }` or `{ "move": 0..3 }`, in order. `lib/game.ts` is pure and
+  deterministic, so replaying the actions from `createGame` rebuilds the exact state (`replay(players, actions)`).
+  The server never trusts a state sent by the browser.
+- The server rolls with `crypto.randomInt(1, 7)`, validates every move with `lib/game.ts` (`400 ILLEGAL_MOVE`),
+  and plays the bots with `lib/bot.ts` until it is the human's turn again or the game is over. When the human
+  finishes, the bots play the remaining places in the same request.
+- As soon as the human's place is decided, the server inserts the `games` row itself (place, players, the human's
+  roll count, `match_id`), in the same transaction as the match update. `POST /api/games` no longer exists.
+- Match view: `{ id, players, actions, status }`. Roll and move answer `{ actions, actionCount }` with only the new
+  actions; the browser applies them one by one with `lib/game.ts`, using the bot delay (or "Fast bots") for the bots.
+- Only the owner (`player_id` = the token's `sub`) can see or play a match; for anyone else it is `404 NOT_FOUND`.
+  Rolling or moving in a finished or abandoned match is `409 MATCH_OVER`.
+- **Optimistic concurrency:** the update only succeeds if `action_count` is unchanged since the match was read
+  (`UPDATE ... WHERE id = ? AND action_count = ?`). Otherwise `409 CONFLICT` (a double click, a second tab);
+  the browser reloads the match and continues.
+- At most **3 active matches** per player: starting another one marks the oldest active ones as `abandoned`.
+- After a page reload the browser asks for `/api/matches/current` and continues that match by replaying its actions.
+
 ## Leaderboards
 There are two leaderboards, both GROUP BY queries over `games` joined with `players`:
 1. **Most wins:** wins = number of games with `place = 1`, ordered by wins (descending), then by games played

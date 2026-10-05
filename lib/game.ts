@@ -300,3 +300,23 @@ export function applyMove(state: GameState, tokenIndex: number): GameState {
 export function rollCount(state: GameState, color: Color): number {
   return state.events.filter((event) => event.type === 'rolled' && event.player === color).length;
 }
+
+/** One step of a match: a roll (dice value) or a move (token index). A match is stored as its actions. */
+export type Action = { roll: number } | { move: number };
+
+export function isAction(value: unknown): value is Action {
+  if (!value || typeof value !== 'object') return false;
+  const keys = Object.keys(value);
+  return keys.length === 1 && (keys[0] === 'roll' || keys[0] === 'move');
+}
+
+/** Applies one action with the normal rules; illegal actions throw like applyRoll/applyMove. */
+export function applyAction(state: GameState, action: Action): GameState {
+  if (!isAction(action)) throw new RangeError('unknown action');
+  return 'roll' in action ? applyRoll(state, action.roll) : applyMove(state, action.move);
+}
+
+/** Rebuilds a match from its players and actions. The rules are deterministic, so this is exact. */
+export function replay(players: readonly number[], actions: readonly Action[]): GameState {
+  return actions.reduce(applyAction, createGame({ players }));
+}

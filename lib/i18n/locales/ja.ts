@@ -75,6 +75,19 @@ const ja: Locale = {
     saved: '結果をアカウントに保存しました。',
     notSaved: 'ログインしていないため、この結果は保存されませんでした。',
   },
+  match: {
+    resumed: '途中のゲームを再開しました。',
+  },
+  replay: {
+    button: 'リプレイ',
+    title: 'リプレイ',
+    play: '再生',
+    pause: '一時停止',
+    prev: '前の手',
+    next: '次の手',
+    position: '{total}手中{current}手目',
+    close: 'ゲームに戻る',
+  },
   history: {
     title: '対戦履歴',
     empty: 'まだ対戦記録がありません。ログインした状態でゲームを最後までプレイしてください。',
@@ -91,6 +104,9 @@ const ja: Locale = {
     clearLeaderboard: 'ランキングをリセット',
   },
   errors: {
+    NOT_FOUND: 'このゲームはもう存在しません。',
+    CONFLICT: 'このゲームは別の場所で更新されました。最新の状態を読み込みました。',
+    MATCH_OVER: 'このゲームはすでに終了しています。',
     UNAUTHORIZED: 'セッションの有効期限が切れました。もう一度ログインしてください。',
     FORBIDDEN: 'この操作を行う権限がありません。',
     ILLEGAL_MOVE: 'その手は打てません。',

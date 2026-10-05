@@ -1,4 +1,5 @@
 // Shapes and limits shared by the API route handlers and the browser. Pure: no server or browser code.
+import type { Action } from './game';
 
 export const LOCALES = ['en', 'vi', 'ja'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -10,36 +11,36 @@ export function isLocale(value: unknown): value is Locale {
 /** GET /api/me */
 export type Me = { id: string; name: string; wins: number; games: number; locale: Locale | null };
 
-/** POST /api/games body: the human's result, sent once their place is decided. */
+/** A saved result: the human's place, the number of players and the human's own roll count. */
 export type GameResult = { place: number; players: number; rolls: number };
 
-/** GET /api/me/games: one of the player's own saved results. */
-export type GameRecord = GameResult & { finishedAt: string };
+/** GET /api/me/games: one of the player's own saved results. `matchId` is null for results saved before phase 4. */
+export type GameRecord = GameResult & { finishedAt: string; matchId: string | null };
 
 /** How many results GET /api/me/games returns. */
 export const HISTORY_SIZE = 20;
 
-/** Upper bound for `rolls`, only to reject nonsense; real games need far fewer. */
-export const MAX_ROLLS = 10_000;
-
-export function isGameResult(value: unknown): value is GameResult {
-  if (!value || typeof value !== 'object') return false;
-  const { place, players, rolls } = value as Record<string, unknown>;
-  return (
-    Number.isInteger(players) &&
-    Number.isInteger(place) &&
-    Number.isInteger(rolls) &&
-    (players as number) >= 2 &&
-    (players as number) <= 4 &&
-    (place as number) >= 1 &&
-    (place as number) <= (players as number) &&
-    (rolls as number) >= 1 &&
-    (rolls as number) <= MAX_ROLLS
-  );
-}
-
 export const PLAYER_COUNTS = [2, 3, 4] as const;
 export type PlayerCount = (typeof PLAYER_COUNTS)[number];
+
+export function isPlayerCount(value: unknown): value is PlayerCount {
+  return (PLAYER_COUNTS as readonly unknown[]).includes(value);
+}
+
+/** Seats by number of players (docs/01-game-rules.md); the human is always Red (0). */
+export const SEATS: Record<PlayerCount, number[]> = { 2: [0, 2], 3: [0, 1, 2], 4: [0, 1, 2, 3] };
+export const HUMAN = 0;
+
+/** A match as the API returns it: the browser rebuilds the state with replay(SEATS[players], actions). */
+export type MatchView = {
+  id: string;
+  players: PlayerCount;
+  actions: Action[];
+  status: 'active' | 'finished' | 'abandoned';
+};
+
+/** POST /api/matches/:id/roll and /move: only the actions added by this request. */
+export type ActionsResponse = { actions: Action[]; actionCount: number };
 
 /** GET /api/leaderboard */
 export type Leaderboards = {

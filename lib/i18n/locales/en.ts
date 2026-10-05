@@ -75,6 +75,19 @@ const en = {
     saved: 'Result saved to your account.',
     notSaved: "You're not logged in, so this result wasn't saved.",
   },
+  match: {
+    resumed: 'Continued your unfinished game.',
+  },
+  replay: {
+    button: 'Replay',
+    title: 'Replay',
+    play: 'Play',
+    pause: 'Pause',
+    prev: 'Previous step',
+    next: 'Next step',
+    position: 'Step {current} of {total}',
+    close: 'Back to the game',
+  },
   history: {
     title: 'My games',
     empty: 'No games yet. Finish a game while logged in to see it here.',
@@ -91,6 +104,9 @@ const en = {
     clearLeaderboard: 'Clear leaderboard',
   },
   errors: {
+    NOT_FOUND: 'That game doesn\'t exist anymore.',
+    CONFLICT: 'This game was changed elsewhere. The latest state has been loaded.',
+    MATCH_OVER: 'This game is already over.',
     UNAUTHORIZED: 'Your session has expired. Please log in again.',
     FORBIDDEN: "You don't have permission to do that.",
     ILLEGAL_MOVE: "That move isn't allowed.",

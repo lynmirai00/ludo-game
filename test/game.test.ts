@@ -6,14 +6,17 @@ import {
   PATH,
   START,
   TOP_STEP,
+  applyAction,
   applyMove,
   applyRoll,
   cellOf,
   createGame,
   legalMoves,
+  replay,
   rollCount,
   trackIndex,
   type Cell,
+  type Action,
   type Color,
   type GameEvent,
   type GameState,
@@ -405,6 +408,35 @@ describe('finishing and ranking', () => {
       { type: 'finish', player: YELLOW, place: 2 },
       { type: 'finish', player: RED, place: 3 },
     ]);
+  });
+});
+
+describe('actions and replay', () => {
+  test('applyAction maps { roll } to applyRoll and { move } to applyMove', () => {
+    const start = createGame({ players: [RED, YELLOW] });
+    expect(applyAction(start, { roll: 6 })).toEqual(applyRoll(start, 6));
+    const rolled = applyRoll(start, 6);
+    expect(applyAction(rolled, { move: 1 })).toEqual(applyMove(rolled, 1));
+  });
+
+  test('replay rebuilds exactly the state reached step by step', () => {
+    const random = mulberry32(7);
+    const actions: Action[] = [];
+    let state = createGame({ players: ALL_COLORS });
+    for (let i = 0; i < 400 && state.phase !== 'over'; i++) {
+      const action: Action = state.phase === 'roll' ? { roll: 1 + Math.floor(random() * 6) } : { move: chooseMove(state) };
+      state = applyAction(state, action);
+      actions.push(action);
+    }
+    expect(replay(ALL_COLORS, actions)).toEqual(state);
+    expect(replay([RED, GREEN, YELLOW], [])).toEqual(createGame({ players: [RED, GREEN, YELLOW] }));
+  });
+
+  test('replay rejects actions that are not legal, like the server must', () => {
+    expect(() => replay([RED, YELLOW], [{ move: 0 }])).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
+    expect(() => replay([RED, YELLOW], [{ roll: 3 }, { move: 0 }])).toThrow(expect.objectContaining({ code: 'ILLEGAL_MOVE' }));
+    expect(() => replay([RED, YELLOW], [{ roll: 9 }])).toThrow(RangeError);
+    expect(() => replay([RED, YELLOW], [{ jump: 1 } as unknown as Action])).toThrow(RangeError);
   });
 });
 

@@ -7,19 +7,21 @@ import { errorKey } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/I18nProvider';
 import { useAuth } from './AuthProvider';
 import { placeName } from './GameLog';
+import { Replay } from './Replay';
 
 /** The logged-in player's recent results (GET /api/me/games). Hidden for guests. */
 export function MyGames() {
   const { t, lang } = useI18n();
-  const { status, loadMyGames, resultsVersion } = useAuth();
+  const { status, call, resultsVersion } = useAuth();
   const [games, setGames] = useState<GameRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [replayId, setReplayId] = useState<string | null>(null);
 
   // Load after login and after every saved result.
   useEffect(() => {
     if (status !== 'user') return;
     let active = true;
-    loadMyGames()
+    call<GameRecord[]>('/api/me/games')
       .then((list) => {
         if (!active) return;
         setGames(list);
@@ -29,7 +31,7 @@ export function MyGames() {
     return () => {
       active = false;
     };
-  }, [status, loadMyGames, resultsVersion]);
+  }, [status, call, resultsVersion]);
 
   if (status !== 'user') return null;
 
@@ -54,10 +56,16 @@ export function MyGames() {
               <time className="history-date" dateTime={game.finishedAt}>
                 {date.format(new Date(game.finishedAt))}
               </time>
+              {game.matchId && (
+                <button type="button" className="btn btn--small" onClick={() => setReplayId(game.matchId)}>
+                  {t('replay.button')}
+                </button>
+              )}
             </li>
           ))}
         </ol>
       )}
+      {replayId && <Replay matchId={replayId} onClose={() => setReplayId(null)} />}
     </section>
   );
 }

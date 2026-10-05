@@ -1,6 +1,16 @@
 // Bot move selection. Uses lib/game.ts to simulate each move, so it never
 // re-implements the rules. Pure: no DOM, no timers, no randomness.
-import { LAST_TRACK, applyMove, homeStep, legalMoves, type GameState, type TokenIndex } from './game';
+import {
+  LAST_TRACK,
+  applyAction,
+  applyMove,
+  homeStep,
+  legalMoves,
+  type Action,
+  type Color,
+  type GameState,
+  type TokenIndex,
+} from './game';
 
 /**
  * Score for moving `tokenIndex` with the current dice (higher is better):
@@ -37,4 +47,26 @@ export function chooseMove(state: GameState): TokenIndex {
   }
   if (best === null) throw new Error('chooseMove() found no legal move');
   return best;
+}
+
+/**
+ * Plays the bots (every player except `human`) until it is the human's turn to roll, or the
+ * game is over. Once the human has finished, that means playing out the remaining places.
+ * Used by the server (phase 4); `rollDie` is injected so this stays pure and testable.
+ */
+export function playBots(
+  start: GameState,
+  human: Color,
+  rollDie: () => number,
+): { state: GameState; actions: Action[] } {
+  let state = start;
+  const actions: Action[] = [];
+  // Every game ends (see the simulation tests); the cap only guards against a rules bug.
+  for (let step = 0; state.phase !== 'over' && state.turn !== human; step++) {
+    if (step > 20_000) throw new Error('playBots: the game does not end');
+    const action: Action = state.phase === 'roll' ? { roll: rollDie() } : { move: chooseMove(state) };
+    state = applyAction(state, action);
+    actions.push(action);
+  }
+  return { state, actions };
 }

@@ -96,6 +96,8 @@ legalMoves(state, diceValue)         // token indices the current player can mov
 applyRoll(state, diceValue)          // records the roll; if no move exists, the turn continues (1/6) or passes
 applyMove(state, tokenIndex)         // moves a token: blocking, capture, extra roll, finishing, game over
 cellOf(color, progress, tokenIndex)  // [row, col] for rendering
+applyAction(state, action)           // { roll: n } → applyRoll, { move: i } → applyMove (phase 4)
+replay(players, actions)             // createGame + every action in order: rebuilds a match (phase 4)
 ```
 The state contains at least: `players`, `tokens` (4 colors x 4 tokens), `turn`, `dice`, `phase` (`roll` | `move` | `over`),
 `ranking` (colors in finishing order; the last place is added when the game ends), and `events`

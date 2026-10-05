@@ -11,8 +11,9 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
 | Phase 3: ZITADEL login and saved results | ✅ Done: real login and a saved result confirmed (2026-10-05) |
-| Phase 4: anti-cheat, replay, resume after reload | ⏭️ **Next step** |
-| Phases 5–7 | Not started |
+| Phase 4: anti-cheat, replay, resume after reload | ✅ Done (2026-10-05) |
+| Phase 5: admin role | ⏭️ **Next step** |
+| Phases 6–7 | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
 `npm run typecheck` and `npm run build` clean. In headless Chrome at 375px full games were played to a complete ranking:
@@ -34,6 +35,17 @@ server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
 A real game finished while logged in was saved (1 row in `games`, no token rejected), so Phase 3 is complete.
+
+## Phase 4 (done 2026-10-05)
+Logged-in games run on the server: a match is stored as its list of actions (`{ roll }` / `{ move }`); the server
+rolls (`crypto.randomInt`), validates moves with `lib/game.ts`, plays the bots (`playBots`) and records the
+result in the same transaction. `POST /api/games` is gone. Optimistic concurrency on `action_count` (409 CONFLICT),
+at most 3 active matches per player, resume after reload (`/api/matches/current`), replay from "My games".
+Checks: 112 tests (incl. a full game through the API, ownership, illegal moves, stale writes; 6 anti-cheat mutations,
+4 caught directly, 2 unreachable through the API by design, one of those now covered with a crafted stored match),
+and an end-to-end run in Chrome with a local test account: full game saved, replay, resume after reload, and
+cheat attempts with a real token (fake result 404, illegal move 400, own dice ignored, foreign match 404).
+**Local test account:** `ludo-test@example.test` (ZITADEL, local only; the password is not stored in the repo) with a few test games.
 
 ## "My games" history (added 2026-10-05)
 `GET /api/me/games` returns the player's 20 most recent results (newest first); a "My games" panel shows them when

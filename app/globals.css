@@ -563,3 +563,66 @@ body {
   font-size: 0.85rem;
   white-space: nowrap;
 }
+
+/* ---- Replay ------------------------------------------------------------- */
+
+.replay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: start center;
+  overflow-y: auto;
+  padding: var(--gutter);
+  background: rgb(0 0 0 / 0.45);
+}
+
+.replay {
+  width: min(100%, 1000px);
+  display: grid;
+  gap: 10px;
+}
+
+.replay-header,
+.replay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.replay-header {
+  justify-content: space-between;
+}
+
+.replay-header .panel-title {
+  margin: 0;
+}
+
+.replay-position {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-slider {
+  width: 100%;
+}
+
+/* The page layout names grid areas for the board and the log; inside the replay they flow normally. */
+.replay-body > .board,
+.replay-body > .log-panel {
+  grid-area: auto;
+}
+
+.replay-body {
+  display: grid;
+  gap: var(--gutter);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .replay-body {
+    grid-template-columns: minmax(0, 560px) minmax(240px, 1fr);
+    align-items: start;
+  }
+}

@@ -44,20 +44,21 @@ Done when: API tests pass (using fake tokens and an in-memory database); real lo
 
 ## Phase 4: Anti-cheat (game logic runs on the server)
 Right now the browser reports the human's place itself, so it can cheat. Change to:
-- `POST /api/matches` creates a game on the server and returns a `matchId` and the state.
-- `POST /api/matches/:id/roll` the server rolls the die (using `crypto.randomInt`) and plays the bots' turns.
-- `POST /api/matches/:id/move` takes `tokenIndex`; the server validates it with `lib/game.ts`.
-- Matches are stored in the database (a `matches` table with the player's `sub` and the serialized state), never in memory:
-  on Vercel each request may run on a different instance. Only the match's owner may roll or move.
+- The endpoints and rules are in "Matches" in `docs/02-zitadel.md`: `POST /api/matches`, `GET /api/matches/current`,
+  `GET /api/matches/:id`, `POST /api/matches/:id/roll` (the server rolls with `crypto.randomInt` and plays the bots),
+  `POST /api/matches/:id/move` (`{ token }`, validated with `lib/game.ts`).
+- Matches are stored in the database as the list of actions (rolls and moves), never in memory:
+  on Vercel each request may run on a different instance. Only the match's owner may see, roll or move.
 - The server records the human's place and roll count itself as soon as the place is decided. Remove `POST /api/games`.
 - Guest games (not logged in) still run entirely in the browser as before and are not saved.
-- Keep each match's full event list, so a finished game can be **replayed** move by move from "My games".
+- Because the actions are stored, a finished game can be **replayed** step by step from "My games"
+  (play/pause, previous/next step, a slider).
 - An unfinished match **survives a page reload**: on load, a logged-in player gets back their latest unfinished
   match instead of a new game.
 - Limit unfinished matches per player (e.g. at most 3; starting a new one abandons the oldest) so nobody can
   fill the database by creating matches in a loop.
 
-Done when: it is impossible to record a win by calling the API directly without actually playing; there are tests for illegal moves and for another player's token trying to act on someone else's match.
+Done when: it is impossible to record a win by calling the API directly without actually playing; there are tests for illegal moves, for another player's token trying to act on someone else's match, for a full game played through the API recording exactly one result, and for stale writes (`409 CONFLICT`); a logged-in game survives a reload and can be replayed.
 
 ## Phase 5: Admin role
 Follow the "Permissions" section in `docs/02-zitadel.md`.

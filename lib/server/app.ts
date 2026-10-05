@@ -1,4 +1,5 @@
 import 'server-only';
+import { randomInt, randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@libsql/client';
@@ -25,6 +26,8 @@ export function api(): Handlers {
     db: createDb(createClient({ url: config.databaseUrl, authToken: config.databaseAuthToken ?? undefined })),
     fetchProfile: zitadelProfile(config.zitadelUrl),
     now: () => new Date(),
+    rollDie: () => randomInt(1, 7),
+    newId: () => randomUUID(),
   });
   return handlers;
 }
