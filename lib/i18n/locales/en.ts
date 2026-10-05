@@ -75,6 +75,10 @@ const en = {
     saved: 'Result saved to your account.',
     notSaved: "You're not logged in, so this result wasn't saved.",
   },
+  history: {
+    title: 'My games',
+    empty: 'No games yet. Finish a game while logged in to see it here.',
+  },
   leaderboard: {
     title: 'Leaderboard',
     empty: 'No one here yet. Be the first!',

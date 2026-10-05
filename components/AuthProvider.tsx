@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User, UserManager } from 'oidc-client-ts';
-import type { GameResult, Me } from '@/lib/api';
+import type { GameRecord, GameResult, Me } from '@/lib/api';
 import {
   ApiCallError,
   apiFetch,
@@ -28,6 +28,8 @@ type Auth = {
   logout(): void;
   /** Saves the human's result when logged in. Throws ApiCallError on failure. */
   saveResult(result: GameResult): Promise<void>;
+  /** The logged-in player's recent results. Throws ApiCallError on failure. */
+  loadMyGames(): Promise<GameRecord[]>;
   /** Changes whenever a result is saved, so the leaderboard knows to reload. */
   resultsVersion: number;
 };
@@ -123,6 +125,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [becomeGuest],
   );
 
+  const loadMyGames = useCallback(async () => {
+    try {
+      return await apiFetch<GameRecord[]>('/api/me/games', {}, user.current);
+    } catch (error) {
+      if (error instanceof ApiCallError && error.code === 'UNAUTHORIZED') await becomeGuest();
+      throw error;
+    }
+  }, [becomeGuest]);
+
   const value = useMemo<Auth>(
     () => ({
       status,
@@ -130,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
       resultsVersion,
       saveResult,
+      loadMyGames,
       login: () => {
         if (userManager.current) void login(userManager.current, lang);
       },
@@ -137,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userManager.current) void logout(userManager.current);
       },
     }),
-    [status, me, error, resultsVersion, saveResult, lang],
+    [status, me, error, resultsVersion, saveResult, loadMyGames, lang],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

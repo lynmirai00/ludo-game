@@ -1,6 +1,6 @@
 import 'server-only';
 import type { Client, Row } from '@libsql/client';
-import { PLAYER_COUNTS, type GameResult, type Leaderboards, type Locale, type Me } from '@/lib/api';
+import { HISTORY_SIZE, PLAYER_COUNTS, type GameRecord, type GameResult, type Leaderboards, type Locale, type Me } from '@/lib/api';
 
 // Schema from docs/02-zitadel.md. Timestamps are ISO 8601 text (SQLite has no date type).
 const SCHEMA = `
@@ -33,6 +33,8 @@ export type Db = {
   getMe(id: string): Promise<Me | null>;
   setLocale(id: string, locale: Locale): Promise<void>;
   addGame(playerId: string, result: GameResult, finishedAt: Date): Promise<void>;
+  /** The player's most recent results, newest first. */
+  listGames(playerId: string): Promise<GameRecord[]>;
   leaderboards(): Promise<Leaderboards>;
 };
 
@@ -91,6 +93,21 @@ export function createDb(client: Client): Db {
         sql: 'INSERT INTO games (player_id, place, players, rolls, finished_at) VALUES (?, ?, ?, ?, ?)',
         args: [playerId, place, players, rolls, finishedAt.toISOString()],
       });
+    },
+
+    async listGames(playerId) {
+      await init();
+      const { rows } = await client.execute({
+        sql: `SELECT place, players, rolls, finished_at FROM games
+              WHERE player_id = ? ORDER BY finished_at DESC, id DESC LIMIT ?`,
+        args: [playerId, HISTORY_SIZE],
+      });
+      return rows.map((row) => ({
+        place: num(row, 'place'),
+        players: num(row, 'players'),
+        rolls: num(row, 'rolls'),
+        finishedAt: str(row, 'finished_at'),
+      }));
     },
 
     async leaderboards() {

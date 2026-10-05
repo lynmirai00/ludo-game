@@ -32,6 +32,8 @@ Done when: a full game can be played in the browser in each of the three languag
 - `lib/auth-client.ts`, `lib/server/auth.ts`, `lib/server/db.ts`, `lib/server/errors.ts` and the API route handlers from `docs/02-zitadel.md`.
 - Top bar: when logged out, show "Log in to save your results" and a "Log in" button; when logged in, show the name, wins/games, and a "Log out" button.
 - As soon as the human's place is decided: if logged in, send `{ place, players, rolls }` (`rolls` = the human's own rolls in that game); if not, add "You're not logged in, so this result wasn't saved." to the game log.
+- A "My games" panel, only when logged in: the player's 20 most recent results (date and time, number of players,
+  place, rolls), newest first, from `GET /api/me/games`; it refreshes after each saved result.
 - A "Leaderboard" panel with two tabs: "Most wins" (top 10) and "Fastest wins" (fewest rolls to finish 1st,
   with a tab each for 2, 3 and 4 players). See "Leaderboards" in `docs/02-zitadel.md`.
 - Pass `ui_locales` to ZITADEL on login; save the language to the player's profile with `PUT /api/me/locale` and restore it on login (see `docs/04-i18n.md`).
@@ -49,6 +51,9 @@ Right now the browser reports the human's place itself, so it can cheat. Change 
   on Vercel each request may run on a different instance. Only the match's owner may roll or move.
 - The server records the human's place and roll count itself as soon as the place is decided. Remove `POST /api/games`.
 - Guest games (not logged in) still run entirely in the browser as before and are not saved.
+- Keep each match's full event list, so a finished game can be **replayed** move by move from "My games".
+- An unfinished match **survives a page reload**: on load, a logged-in player gets back their latest unfinished
+  match instead of a new game.
 - Limit unfinished matches per player (e.g. at most 3; starting a new one abandons the oldest) so nobody can
   fill the database by creating matches in a loop.
 

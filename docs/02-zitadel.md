@@ -76,6 +76,7 @@ DATABASE_AUTH_TOKEN=
 | GET | /api/config | No | `{ zitadelUrl, clientId }` |
 | GET | /api/leaderboard | No | Both leaderboards in one response, see "Leaderboards" below |
 | GET | /api/me | Yes | `{ id, name, wins, games, locale }` (wins = 1st places) |
+| GET | /api/me/games | Yes | The player's own 20 most recent results, newest first: `[{ place, players, rolls, finishedAt }]` |
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
 | POST | /api/games | Yes | Record one game result `{ place, players, rolls }` (phase 3); `players` must be 2–4, `place` 1..`players` and `rolls` an integer ≥ 1, otherwise `400 INVALID_RESULT` |
 | DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |

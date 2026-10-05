@@ -3,7 +3,7 @@ import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair, type JWK } from
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { GET as getConfig } from '@/app/api/config/route';
 import { DELETE as deleteUnknown, GET as getUnknown } from '@/app/api/[...path]/route';
-import type { Leaderboards, Me } from '@/lib/api';
+import type { GameRecord, Leaderboards, Me } from '@/lib/api';
 import { displayName } from '@/lib/display-name';
 import { createAuth, requireRole } from '@/lib/server/auth';
 import { loadConfig, validateConfig } from '@/lib/server/config';
@@ -239,6 +239,45 @@ describe('POST /api/games', () => {
   test('needs a valid token', async () => {
     expect((await saveGame('', { place: 1, players: 2, rolls: 30 })).status).toBe(401);
     expect((await saveGame(await token({ key: otherKey }), { place: 1, players: 2, rolls: 30 })).status).toBe(401);
+  });
+});
+
+describe('GET /api/me/games', () => {
+  async function myGames(bearer: string): Promise<GameRecord[]> {
+    const res = await api.getMyGames(request('/api/me/games', { bearer }));
+    expect(res.status).toBe(200);
+    return res.json();
+  }
+
+  test('needs a valid token', async () => {
+    expect((await api.getMyGames(request('/api/me/games'))).status).toBe(401);
+    expect((await api.getMyGames(request('/api/me/games', { bearer: await token({ key: otherKey }) }))).status).toBe(401);
+  });
+
+  test("returns only the token subject's games, newest first", async () => {
+    const alice = await token({ sub: 'alice' });
+    const bob = await token({ sub: 'bob' });
+    await saveGame(alice, { place: 2, players: 4, rolls: 60 });
+    await saveGame(bob, { place: 1, players: 2, rolls: 30 });
+    await saveGame(alice, { place: 1, players: 3, rolls: 45 });
+
+    const games = await myGames(alice);
+    expect(games.map(({ place, players, rolls }) => ({ place, players, rolls }))).toEqual([
+      { place: 1, players: 3, rolls: 45 },
+      { place: 2, players: 4, rolls: 60 },
+    ]);
+    expect(Date.parse(games[0]!.finishedAt)).toBeGreaterThan(Date.parse(games[1]!.finishedAt));
+    expect(await myGames(bob)).toHaveLength(1);
+    expect(await myGames(await token({ sub: 'nobody' }))).toEqual([]);
+  });
+
+  test('returns at most the 20 most recent games', async () => {
+    const bearer = await token();
+    for (let i = 1; i <= 25; i++) await saveGame(bearer, { place: 1, players: 2, rolls: i });
+    const games = await myGames(bearer);
+    expect(games).toHaveLength(20);
+    expect(games[0]!.rolls).toBe(25);
+    expect(games.at(-1)!.rolls).toBe(6);
   });
 });
 

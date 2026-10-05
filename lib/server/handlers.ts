@@ -71,6 +71,12 @@ export function createHandlers({ auth, db, fetchProfile, now }: Deps) {
       return Response.json({ saved: true }, { status: 201 });
     }),
 
+    /** GET /api/me/games: the player's own recent results. */
+    getMyGames: handle(async (request) => {
+      const user = await auth.requireUser(request);
+      return Response.json(await db.listGames(user.id));
+    }),
+
     /** GET /api/leaderboard: public. */
     getLeaderboard: handle(async () => Response.json(await db.leaderboards())),
   };

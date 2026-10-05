@@ -13,6 +13,12 @@ export type Me = { id: string; name: string; wins: number; games: number; locale
 /** POST /api/games body: the human's result, sent once their place is decided. */
 export type GameResult = { place: number; players: number; rolls: number };
 
+/** GET /api/me/games: one of the player's own saved results. */
+export type GameRecord = GameResult & { finishedAt: string };
+
+/** How many results GET /api/me/games returns. */
+export const HISTORY_SIZE = 20;
+
 /** Upper bound for `rolls`, only to reject nonsense; real games need far fewer. */
 export const MAX_ROLLS = 10_000;
 

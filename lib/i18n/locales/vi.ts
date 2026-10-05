@@ -75,6 +75,10 @@ const vi: Locale = {
     saved: 'Đã lưu kết quả vào tài khoản của bạn.',
     notSaved: 'Bạn chưa đăng nhập nên kết quả không được lưu.',
   },
+  history: {
+    title: 'Lịch sử của tôi',
+    empty: 'Chưa có ván nào. Hãy chơi hết một ván khi đã đăng nhập.',
+  },
   leaderboard: {
     title: 'Bảng xếp hạng',
     empty: 'Chưa có ai. Hãy là người đầu tiên!',

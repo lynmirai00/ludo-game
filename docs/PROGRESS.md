@@ -33,6 +33,11 @@ CLIENT_ID, userinfo name, saving a result, language restore). If it fails, the t
 server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
+## "My games" history (added 2026-10-05)
+`GET /api/me/games` returns the player's 20 most recent results (newest first); a "My games" panel shows them when
+logged in and reloads after each saved result. API tested (3 tests); the panel itself was not seen yet with a real
+login (it is hidden for guests, checked). Replay and resuming an unfinished game are planned for Phase 4.
+
 ## Real login check (2026-10-05)
 The user logged in with a new account and the admin account. In `data/game.db`: 2 players, no name containing "@",
 both with a saved language, **0 games saved** — the "Result saved" path still needs one game finished while logged in
