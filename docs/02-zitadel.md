@@ -32,7 +32,8 @@ If ZITADEL is unreachable, the game must still be playable and show the translat
 
 Pass the current UI language to ZITADEL so its login page matches:
 ```ts
-userManager.signinRedirect({ extraQueryParams: { ui_locales: currentLang } }); // 'en' | 'vi' | 'ja'
+// ZITADEL has no Vietnamese login page; 'vi en' makes it fall back to English (see docs/04-i18n.md).
+userManager.signinRedirect({ extraQueryParams: { ui_locales: currentLang === 'vi' ? 'vi en' : currentLang } });
 ```
 See `docs/04-i18n.md` for what happens if ZITADEL doesn't support a language.
 
@@ -149,13 +150,16 @@ Vercel only hosts the Next.js app. ZITADEL and the database live elsewhere:
 ```yaml
 services:
   zitadel:
-    image: ghcr.io/zitadel/zitadel:latest
+    image: ghcr.io/zitadel/zitadel:v4.19.4
     restart: always
     command: start-from-init --masterkey "MasterkeyNeedsToHave32Characters" --tlsMode disabled
     environment:
       ZITADEL_EXTERNALDOMAIN: localhost
       ZITADEL_EXTERNALPORT: 8080
       ZITADEL_EXTERNALSECURE: "false"
+      # Use the login UI built into ZITADEL. Since v4, new instances require the separate
+      # "Login V2" app by default, which this compose file does not run.
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"
       ZITADEL_DATABASE_POSTGRES_HOST: db
       ZITADEL_DATABASE_POSTGRES_PORT: 5432
       ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
@@ -186,7 +190,12 @@ services:
 volumes:
   zitadel-data:
 ```
-Note: ZITADEL configuration can change between versions. If the container fails to start, compare against the official docs at https://zitadel.com/docs (self-hosting with Docker Compose).
+Notes (checked on 2026-10-05 with v4.19.4):
+- The image is pinned; `latest` changed behaviour between major versions.
+- Without `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"`, the Console redirects to `/ui/v2/login`,
+  which answers `{"code":5,"message":"Not Found"}` because the separate Login V2 container is not running.
+  The setting only applies when an instance is first created; after changing it, reset with `docker compose down -v`.
+- If you upgrade ZITADEL later, compare against the official docs at https://zitadel.com/docs (self-hosting with Docker Compose).
 
 ## Permissions (phase 5)
 - In the Console: Project → Roles, create the role key `admin`. Grant it to an account under Authorizations.
