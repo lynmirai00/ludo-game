@@ -119,3 +119,8 @@ export function saveLanguage(code: Language, storage?: StorageLike | null): void
     // Not fatal: the language just won't be remembered on this device.
   }
 }
+
+/** Translation key for an API error code; unknown codes map to errors.UNKNOWN. */
+export function errorKey(code: string): MessageKey {
+  return Object.hasOwn(en.errors, code) ? (`errors.${code}` as MessageKey) : 'errors.UNKNOWN';
+}

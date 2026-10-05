@@ -78,6 +78,10 @@ const ja: Locale = {
   leaderboard: {
     title: 'ランキング',
     empty: 'まだ誰もいません。一番乗りを目指しましょう！',
+    mostWins: '勝利数',
+    fastestWins: '最速勝利',
+    players: { other: '{count}人' },
+    rolls: { other: '{count}回' },
   },
   admin: {
     clearLeaderboard: 'ランキングをリセット',

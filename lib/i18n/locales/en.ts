@@ -78,6 +78,10 @@ const en = {
   leaderboard: {
     title: 'Leaderboard',
     empty: 'No one here yet. Be the first!',
+    mostWins: 'Most wins',
+    fastestWins: 'Fastest wins',
+    players: { one: '{count} player', other: '{count} players' },
+    rolls: { one: '{count} roll', other: '{count} rolls' },
   },
   admin: {
     clearLeaderboard: 'Clear leaderboard',

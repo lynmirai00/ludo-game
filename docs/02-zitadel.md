@@ -24,7 +24,7 @@ new UserManager({
   redirect_uri: location.origin + '/',
   post_logout_redirect_uri: location.origin + '/',
   response_type: 'code',
-  scope: 'openid profile email',
+  scope: 'openid profile', // no email: the game never needs it
 });
 ```
 If ZITADEL is unreachable, the game must still be playable and show the translated message

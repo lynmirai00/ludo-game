@@ -10,8 +10,9 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from an earlier plain-JS version, since deleted) |
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
-| Phase 3: ZITADEL login and saved results | ⏭️ **Next step** |
-| Phases 4–7 | Not started |
+| Phase 3: ZITADEL login and saved results | 🟡 Code done and tested; **waiting for the user to try a real login** |
+| Phase 4: anti-cheat | ⏭️ Next after Phase 3 is confirmed |
+| Phases 5–7 | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
 `npm run typecheck` and `npm run build` clean. In headless Chrome at 375px full games were played to a complete ranking:
@@ -23,39 +24,14 @@ Earlier Phase 2 checks (international rules): `npm test` 74/74, `npm run typeche
 language mid-game re-translated the whole log while the log length, token positions and turn stayed identical. No
 horizontal scroll; the board is 343px wide at 375px. Desktop layout (board left, controls and log right) also checked.
 
-## Next step: Phase 3
-Local ZITADEL is set up and running (`docker compose up -d`, v4.19.4, http://localhost:8080, only reachable from this
-machine). The user still has to click through the Console (Project "Ludo", Application "ludo-web": User Agent + PKCE,
-redirect and post-logout URI `http://localhost:3000/`, Development Mode on, Auth Token Type JWT) and send the
-Client ID; then create `.env.local` from `.env.example`.
-Then: `lib/auth-client.ts`, `lib/server/auth.ts`, `lib/server/db.ts` (libSQL), the API route handlers, the login UI,
-saving results, the leaderboard, and `PUT /api/me/locale`. From Phase 3 on, a missing `CLIENT_ID` must stop the server
-on startup (`validateConfig()` in `lib/server/config.ts` currently only warns).
-
-## Decisions already made (keep them)
-- Stack: Next.js 16 App Router, TypeScript **6.0.3** (TS 7 has no JS compiler API, which `next build` needs),
-  Node **22.12+** (Vitest 5), Vitest, `@libsql/client` (local file in dev, Turso in production), deployed on Vercel.
-- `next.config.ts` sets `agentRules: false` so `next dev` does not append its own block to `CLAUDE.md`.
-- `.gitattributes` pins LF line endings (the machine has `core.autocrlf=true`).
-- Rules: Vietnamese "Cờ cá ngựa" only (international Ludo was dropped at the user's request). See `docs/01-game-rules.md`.
-  A 1 or a 6 always gives another roll, even without a move. Captures give no extra roll. No safe cells.
-- Ranking: play continues after the first finisher; the last player left takes the last place. The human's result
-  is known when their place is decided; bots then keep playing and "New game" skips the rest.
-  The leaderboard counts 1st places. `games` stores `place` and `players` (see `docs/02-zitadel.md`).
-- Game setup: the human always plays Red. 1 bot = Red, Yellow; 2 bots = Red, Green, Yellow; 3 bots = all four. Default is 3 bots.
-  The opponents choice applies when "New game" is pressed. Bots wait 0.7–0.9 s per step.
-- Browser dice: `crypto.getRandomValues` with rejection sampling (unbiased 1..6). `lib/game.ts` never rolls.
-- `lib/game.ts` types: `Color` and `TokenIndex` are `0 | 1 | 2 | 3`, token rows are 4-tuples, events are a
-  discriminated union. `applyMove` takes a plain `number` (it may come from an untrusted client in Phase 4) and throws
-  `IllegalMoveError` (`code: 'ILLEGAL_MOVE'`) for anything that is not a legal move.
-- "Fast bots" toggle: bot delay 0.12 s instead of 0.7–0.9 s; off by default, kept across new games, `aria-pressed`.
-  Measured in Chrome: about 7x more bot steps per second when on.
-- Bot priorities: climb/enter the home column > capture > leave base > stop on the home entrance > progress.
-- Bot scoring simulates each move with `applyMove` and inspects the new events, so it never duplicates rules.
-- The bot timer lives in a `useEffect` that depends only on the game state, so a language change never interrupts it.
-  Keyboard focus moves (to Roll or the first movable token) only after game steps, never on language changes.
-- All tests use Vitest's `expect`.
-- `stats.summary` is composed from plural-aware `stats.wins` and `stats.games`.
+## Phase 3 status
+Done and verified by me: API (25 tests with fake tokens and an in-memory DB, plus 5 security mutations each caught),
+guest mode in 3 languages ("not saved" note in the log), the Log in button redirects to ZITADEL (English login page
+for vi), the game still works with ZITADEL stopped, `npm test` 95/95, typecheck and build clean.
+Not verifiable without the user's password: a **real login** (JWT token type, the token's `aud` containing
+CLIENT_ID, userinfo name, saving a result, language restore). If it fails, the top bar shows the error and the
+server log prints `Rejected access token: <reason>`.
+Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
 ## Decisions made on 2026-10-05 (before Phase 3)
 - Database schema settled in `docs/02-zitadel.md`: ISO 8601 text timestamps, foreign key, indexes, name refreshed

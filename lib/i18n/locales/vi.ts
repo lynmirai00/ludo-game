@@ -78,6 +78,10 @@ const vi: Locale = {
   leaderboard: {
     title: 'Bảng xếp hạng',
     empty: 'Chưa có ai. Hãy là người đầu tiên!',
+    mostWins: 'Thắng nhiều nhất',
+    fastestWins: 'Thắng nhanh nhất',
+    players: { other: '{count} người' },
+    rolls: { other: '{count} lượt gieo' },
   },
   admin: {
     clearLeaderboard: 'Xóa bảng xếp hạng',

@@ -247,3 +247,13 @@ describe('types', () => {
     expect([missing, extra, key, badKey, groupKey]).toHaveLength(5);
   });
 });
+
+describe('errorKey()', () => {
+  test('maps known API error codes and falls back to errors.UNKNOWN', async () => {
+    const { errorKey } = await import('@/lib/i18n');
+    expect(errorKey('UNAUTHORIZED')).toBe('errors.UNAUTHORIZED');
+    expect(errorKey('FORBIDDEN')).toBe('errors.FORBIDDEN');
+    expect(errorKey('SOMETHING_NEW')).toBe('errors.UNKNOWN');
+    expect(errorKey('constructor')).toBe('errors.UNKNOWN');
+  });
+});

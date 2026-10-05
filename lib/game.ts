@@ -288,3 +288,8 @@ export function applyMove(state: GameState, tokenIndex: number): GameState {
   }
   return { ...next, turn: nextPlayer(next) };
 }
+
+/** How many times `color` has rolled in this game (for the "Fastest wins" leaderboard). */
+export function rollCount(state: GameState, color: Color): number {
+  return state.events.filter((event) => event.type === 'rolled' && event.player === color).length;
+}

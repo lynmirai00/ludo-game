@@ -8,13 +8,17 @@ import {
   applyRoll,
   createGame,
   legalMoves,
+  rollCount,
   type Color,
   type GameState,
   type TokenIndex,
 } from '@/lib/game';
+import { ApiCallError } from '@/lib/auth-client';
+import { errorKey } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/I18nProvider';
+import { useAuth } from './AuthProvider';
 import { Board } from './Board';
-import { GameLog, describeEvent, placeName, playerName } from './GameLog';
+import { GameLog, describeEvent, placeName, playerName, type LogNote } from './GameLog';
 
 const HUMAN: Color = 0; // the human always plays Red
 const OPPONENT_CHOICES = [1, 2, 3] as const;
@@ -43,10 +47,15 @@ function colorVar(color: Color): CSSProperties {
 
 export function Game() {
   const { t, lang } = useI18n();
+  const auth = useAuth();
   const [opponents, setOpponents] = useState<Opponents>(3);
   // Kept across new games; only changes how long bots wait, never the game itself.
   const [fastBots, setFastBots] = useState(false);
   const [state, setState] = useState<GameState>(() => createGame({ players: SEATS[3] }));
+  const [notes, setNotes] = useState<LogNote[]>([]);
+  // The game whose result was already handled, so each game reports exactly once.
+  // `players` keeps its identity for a whole game (unlike `ranking`, which grows as bots finish).
+  const reported = useRef<GameState['players'] | null>(null);
   const rollButton = useRef<HTMLButtonElement>(null);
   const board = useRef<HTMLDivElement>(null);
   // Set by game actions (not by language changes) so focus only moves when the game does.
@@ -85,6 +94,19 @@ export function Game() {
     if (state.phase === 'move') board.current?.querySelector<HTMLButtonElement>('.token.is-movable')?.focus();
     else rollButton.current?.focus();
   }, [state]);
+
+  // As soon as the human's place is decided: save it when logged in, otherwise say it was not saved.
+  const { status: authStatus, saveResult } = auth;
+  useEffect(() => {
+    if (humanPlace === 0 || authStatus === 'loading' || reported.current === state.players) return;
+    reported.current = state.players;
+    const at = state.events.length;
+    const note = (key: LogNote['key']) => setNotes((list) => [...list, { at, key }]);
+    if (authStatus !== 'user') return note('result.notSaved');
+    saveResult({ place: humanPlace, players: state.players.length, rolls: rollCount(state, HUMAN) })
+      .then(() => note('result.saved'))
+      .catch((error) => note(errorKey(error instanceof ApiCallError ? error.code : 'UNKNOWN')));
+  }, [humanPlace, authStatus, saveResult, state]);
 
   const lastRoll = state.events.findLast((e) => e.type === 'rolled');
 
@@ -147,7 +169,11 @@ export function Game() {
               </option>
             ))}
           </select>
-          <button type="button" className="btn" onClick={() => update(createGame({ players: SEATS[opponents] }))}>
+          <button type="button" className="btn" onClick={() => {
+              setNotes([]);
+              update(createGame({ players: SEATS[opponents] }));
+            }}
+          >
             {t('game.newGame')}
           </button>
           <button
@@ -181,7 +207,7 @@ export function Game() {
           if (isHumanTurn && state.phase === 'move') update(applyMove(state, token));
         }}
       />
-      <GameLog events={state.events} human={HUMAN} />
+      <GameLog events={state.events} human={HUMAN} notes={notes} />
     </>
   );
 }

@@ -11,6 +11,7 @@ import {
   cellOf,
   createGame,
   legalMoves,
+  rollCount,
   trackIndex,
   type Cell,
   type Color,
@@ -380,6 +381,20 @@ describe('finishing and ranking', () => {
       { type: 'finish', player: YELLOW, place: 2 },
       { type: 'finish', player: RED, place: 3 },
     ]);
+  });
+});
+
+describe('rollCount()', () => {
+  test("counts only the given player's rolls, including rolls that led to no move", () => {
+    let state = createGame({ players: [RED, YELLOW] });
+    expect(rollCount(state, RED)).toBe(0);
+    state = applyRoll(state, 3); // Red: no move, turn passes
+    state = applyRoll(state, 6); // Yellow: may leave the base
+    state = applyMove(state, 0);
+    state = applyRoll(state, 2); // Yellow again after the 6
+    expect(rollCount(state, RED)).toBe(1);
+    expect(rollCount(state, YELLOW)).toBe(2);
+    expect(rollCount(state, GREEN)).toBe(0);
   });
 });
 

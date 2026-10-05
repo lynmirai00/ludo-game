@@ -19,10 +19,12 @@ export function loadConfig(env: Env = process.env): ServerConfig {
   };
 }
 
-// Called once on server start (instrumentation.ts).
+// Called once on server start (instrumentation.ts): without a Client ID no token can be
+// verified, so stop right away with a clear message instead of failing on every request.
 export function validateConfig(config: ServerConfig = loadConfig()): void {
   if (!config.clientId) {
-    // Phase 1: login is not wired up yet, so only warn. Phase 3 turns this into a hard failure.
-    console.warn('Warning: CLIENT_ID is not set. Login will not work until it is configured (see .env.example).');
+    throw new Error(
+      'CLIENT_ID is not set. Copy .env.example to .env.local and fill in the Client ID of the ZITADEL application (see docs/02-zitadel.md).',
+    );
   }
 }

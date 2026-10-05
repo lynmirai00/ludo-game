@@ -75,18 +75,19 @@ body {
   display: grid;
   gap: var(--gutter);
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "controls" "board" "log";
+  grid-template-areas: "controls" "board" "log" "leaderboard";
 }
 
 .controls { grid-area: controls; }
 .board { grid-area: board; }
 .log-panel { grid-area: log; }
+.leaderboard-panel { grid-area: leaderboard; }
 
 @media (min-width: 900px) {
   .app {
     grid-template-columns: minmax(0, 600px) minmax(260px, 1fr);
-    grid-template-rows: auto 1fr;
-    grid-template-areas: "board controls" "board log";
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "board controls" "board log" "board leaderboard";
     align-items: start;
   }
 }
@@ -381,4 +382,112 @@ body {
   border-color: var(--blue);
   color: var(--surface);
   font-weight: 700;
+}
+
+/* ---- Login area in the top bar ----------------------------------------- */
+
+.topbar-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.auth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.auth-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.auth-stats,
+.auth-note {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.btn--small {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+}
+
+/* ---- Leaderboard -------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tab {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+}
+
+.tabs--small .tab {
+  font-size: 0.85rem;
+  padding: 3px 10px;
+}
+
+.tab[aria-selected="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+  font-weight: 700;
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.leaderboard {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.leaderboard-rank {
+  min-width: 1.5em;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.leaderboard-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.leaderboard-value {
+  white-space: nowrap;
+}
+
+.log-item--note {
+  border-left-color: var(--text);
+  font-style: italic;
 }
