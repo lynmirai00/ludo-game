@@ -96,6 +96,8 @@ Pick the move with the highest score:
 climb or enter the home column (+1000, plus the step reached) > capture (+800) > leave base (+500)
 > stop on the home entrance (+300), plus the new progress value.
 Bots act after a 0.7–0.9 second delay so the human can follow along.
+A "Fast bots" toggle (off by default, kept across new games) shortens the delay to about 0.12 s,
+for example to watch the bots play for the remaining places.
 
 ## Minimum tests for the game rules
 - Leaving the base: only on a 1 or a 6; the token lands on progress 0 and does not move further;

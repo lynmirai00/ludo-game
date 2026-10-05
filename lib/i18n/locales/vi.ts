@@ -18,6 +18,7 @@ const vi: Locale = {
     lastRoll: 'Vừa gieo được {value}',
     board: 'Bàn cờ',
     ranking: 'Thứ hạng',
+    fastBots: 'Tăng tốc',
   },
   turn: {
     self: 'Lượt của bạn',

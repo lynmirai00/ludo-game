@@ -17,6 +17,7 @@ const en = {
     lastRoll: 'Last roll: {value}',
     board: 'Game board',
     ranking: 'Ranking',
+    fastBots: 'Fast bots',
   },
   turn: {
     self: 'Your turn',

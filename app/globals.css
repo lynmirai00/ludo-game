@@ -374,3 +374,11 @@ body {
   font-weight: 700;
   min-width: 3em;
 }
+
+/* On/off button (aria-pressed), e.g. "Fast bots". */
+.btn--toggle[aria-pressed="true"] {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--surface);
+  font-weight: 700;
+}

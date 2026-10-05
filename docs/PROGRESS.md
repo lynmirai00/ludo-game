@@ -9,6 +9,7 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Phase 1: project skeleton and i18n | ✅ Done |
 | Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from the plain-JS branch `phase-2-game`) |
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
+| "Fast bots" toggle | ✅ Done (2026-10-05) |
 | Phase 3: ZITADEL login and saved results | ⏭️ **Next step** |
 | Phases 4–7 | Not started |
 
@@ -46,6 +47,8 @@ on startup (`validateConfig()` in `lib/server/config.ts` currently only warns).
 - `lib/game.ts` types: `Color` and `TokenIndex` are `0 | 1 | 2 | 3`, token rows are 4-tuples, events are a
   discriminated union. `applyMove` takes a plain `number` (it may come from an untrusted client in Phase 4) and throws
   `IllegalMoveError` (`code: 'ILLEGAL_MOVE'`) for anything that is not a legal move.
+- "Fast bots" toggle: bot delay 0.12 s instead of 0.7–0.9 s; off by default, kept across new games, `aria-pressed`.
+  Measured in Chrome: about 7x more bot steps per second when on.
 - Bot priorities: climb/enter the home column > capture > leave base > stop on the home entrance > progress.
 - Bot scoring simulates each move with `applyMove` and inspects the new events, so it never duplicates rules.
 - The bot timer lives in a `useEffect` that depends only on the game state, so a language change never interrupts it.

@@ -18,6 +18,7 @@ const ja: Locale = {
     lastRoll: '出た目：{value}',
     board: 'ゲーム盤',
     ranking: '順位',
+    fastBots: '早送り',
   },
   turn: {
     self: 'あなたの番です',

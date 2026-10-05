@@ -20,6 +20,7 @@ const HUMAN: Color = 0; // the human always plays Red
 const OPPONENT_CHOICES = [1, 2, 3] as const;
 type Opponents = (typeof OPPONENT_CHOICES)[number];
 const NO_MOVES: ReadonlySet<TokenIndex> = new Set();
+const FAST_BOT_DELAY_MS = 120;
 
 // Seats from docs/01-game-rules.md: 2 players = Red, Yellow; 3 = Red, Green, Yellow; 4 = all.
 const SEATS: Record<Opponents, Color[]> = { 1: [0, 2], 2: [0, 1, 2], 3: [0, 1, 2, 3] };
@@ -43,6 +44,8 @@ function colorVar(color: Color): CSSProperties {
 export function Game() {
   const { t, lang } = useI18n();
   const [opponents, setOpponents] = useState<Opponents>(3);
+  // Kept across new games; only changes how long bots wait, never the game itself.
+  const [fastBots, setFastBots] = useState(false);
   const [state, setState] = useState<GameState>(() => createGame({ players: SEATS[3] }));
   const rollButton = useRef<HTMLButtonElement>(null);
   const board = useRef<HTMLDivElement>(null);
@@ -61,17 +64,18 @@ export function Game() {
     setState(next);
   }, []);
 
-  // Bot turns: one step (roll or move) per 0.7–0.9 s so the human can follow along.
+  // Bot turns: one step (roll or move) per 0.7–0.9 s so the human can follow along,
+  // or much faster with "Fast bots".
   // Bots keep playing for the remaining places after the human has finished.
   // Depends only on the game state, so changing language never interrupts it.
   useEffect(() => {
     if (state.phase === 'over' || state.turn === HUMAN) return;
     const timer = setTimeout(
       () => update(state.phase === 'roll' ? applyRoll(state, rollDie()) : applyMove(state, chooseMove(state))),
-      700 + Math.random() * 200,
+      fastBots ? FAST_BOT_DELAY_MS : 700 + Math.random() * 200,
     );
     return () => clearTimeout(timer);
-  }, [state, update]);
+  }, [state, update, fastBots]);
 
   // After a game step, move keyboard focus to what the human should do next.
   useEffect(() => {
@@ -145,6 +149,14 @@ export function Game() {
           </select>
           <button type="button" className="btn" onClick={() => update(createGame({ players: SEATS[opponents] }))}>
             {t('game.newGame')}
+          </button>
+          <button
+            type="button"
+            className="btn btn--toggle"
+            aria-pressed={fastBots}
+            onClick={() => setFastBots((on) => !on)}
+          >
+            {t('game.fastBots')}
           </button>
         </div>
         {state.ranking.length > 0 && (

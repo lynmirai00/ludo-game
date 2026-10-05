@@ -23,6 +23,7 @@ Done when: `npm run dev` and `npm run build && npm start` work, http://localhost
 - Draw the 15x15 board with CSS Grid: colored bases, home columns, start cells and star cells.
 - A "Roll" button; movable tokens pulse and are clickable.
 - Choose the number of bots (1, 2 or 3) and a "New game" button.
+- A "Fast bots" toggle that speeds up the bots (see "Bot" in `docs/01-game-rules.md`).
 - Show the ranking as players finish; after the human's place is decided the bots keep playing for the remaining places.
 - A "Game log" panel with the newest events on top. The game engine emits structured events and the UI translates them (see `docs/04-i18n.md`), so switching language mid-game re-renders the whole log in the new language.
 - All text goes through `t()`; add every new key to all three locale files.
