@@ -10,8 +10,8 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Phase 2: game rules and play-vs-bot UI | ✅ Done (ported from an earlier plain-JS version, since deleted) |
 | Switch to Vietnamese "Cờ cá ngựa" rules, ranking, 3-player games | ✅ Done (2026-10-05) |
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
-| Phase 3: ZITADEL login and saved results | 🟡 Real login confirmed by the user (2026-10-05); **saving a result while logged in not yet tried** |
-| Phase 4: anti-cheat | ⏭️ Next after Phase 3 is confirmed |
+| Phase 3: ZITADEL login and saved results | ✅ Done: real login and a saved result confirmed (2026-10-05) |
+| Phase 4: anti-cheat, replay, resume after reload | ⏭️ **Next step** |
 | Phases 5–7 | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
@@ -32,6 +32,8 @@ Not verifiable without the user's password: a **real login** (JWT token type, th
 CLIENT_ID, userinfo name, saving a result, language restore). If it fails, the top bar shows the error and the
 server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
+
+A real game finished while logged in was saved (1 row in `games`, no token rejected), so Phase 3 is complete.
 
 ## "My games" history (added 2026-10-05)
 `GET /api/me/games` returns the player's 20 most recent results (newest first); a "My games" panel shows them when
