@@ -12,8 +12,9 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | "Fast bots" toggle | ✅ Done (2026-10-05) |
 | Phase 3: ZITADEL login and saved results | ✅ Done: real login and a saved result confirmed (2026-10-05) |
 | Phase 4: anti-cheat, replay, resume after reload | ✅ Done (2026-10-05) |
-| Phase 5: admin role | 🟡 Code done and tested (115 tests); **waiting for the user to set up the admin role in ZITADEL and try it** |
-| Phases 6–7 | Not started |
+| Phase 5: admin role | ✅ Done: tried by the user with a real admin and a normal account (2026-10-05) |
+| Phase 6: deploy to Vercel (with the security checklist) | ⏭️ **Next step** |
+| Phase 7 (optional): online multiplayer | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
 `npm run typecheck` and `npm run build` clean. In headless Chrome at 375px full games were played to a complete ranking:
@@ -35,6 +36,12 @@ server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
 A real game finished while logged in was saved (1 row in `games`, no token rejected), so Phase 3 is complete.
+
+## Phase 5 (done 2026-10-05)
+"Reset leaderboards" (admin only) stores `leaderboard_since` in `settings`; nothing is deleted. In ZITADEL v4 the
+role reaches the access token only with BOTH project setting "Return user roles during authentication" AND app
+setting "Add user roles to the access token", followed by a new login (found while debugging: the token first had
+no roles claim). The user's admin account now has the `admin` role; a reset was done once (games kept).
 
 ## Phase 4 (done 2026-10-05)
 Logged-in games run on the server: a match is stored as its list of actions (`{ roll }` / `{ move }`); the server

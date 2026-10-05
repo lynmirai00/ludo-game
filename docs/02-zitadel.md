@@ -260,7 +260,12 @@ Notes (checked on 2026-10-05 with v4.19.4):
 
 ## Permissions (phase 5)
 - In the Console: Project → Roles, create the role key `admin`. Grant it to an account under Authorizations.
-- In the Project, enable "Assert Roles on Authentication" so roles are included in the token.
+- In the Project's **General** settings, enable **"Return user roles during authentication"** (called "Assert Roles
+  on Authentication" in older ZITADEL versions). Do **not** enable "Only authorized users can authenticate": it
+  would block every player without a role.
+- In the Application's **Token Settings**, enable **"Add user roles to the access token"**: the server reads the
+  roles from the JWT access token, not from the ID token.
+- Grant the role under the project's **Role Assignments** (called "Authorizations" in older versions).
 - Roles appear in the claim `urn:zitadel:iam:org:project:roles` (an object whose keys are role names).
 - `requireRole(user, 'admin')` checks this claim and returns `403` if the role is missing.
 - `GET /api/me` returns `admin: true` when the verified token has the role, so the browser knows whether to show the
