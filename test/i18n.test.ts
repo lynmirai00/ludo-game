@@ -257,3 +257,14 @@ describe('errorKey()', () => {
     expect(errorKey('constructor')).toBe('errors.UNKNOWN');
   });
 });
+
+describe('languageFromRequest() (first render on the server)', () => {
+  test('the cookie wins, then Accept-Language, then English', async () => {
+    const { languageFromRequest } = await import('@/lib/i18n');
+    expect(languageFromRequest({ cookie: 'ja', acceptLanguage: 'vi-VN,vi;q=0.9' })).toBe('ja');
+    expect(languageFromRequest({ acceptLanguage: 'fr-FR,fr;q=0.9,vi;q=0.8,en;q=0.5' })).toBe('vi');
+    expect(languageFromRequest({ acceptLanguage: 'ja-JP' })).toBe('ja');
+    expect(languageFromRequest({ cookie: 'xx', acceptLanguage: 'de' })).toBe('en');
+    expect(languageFromRequest({})).toBe('en');
+  });
+});

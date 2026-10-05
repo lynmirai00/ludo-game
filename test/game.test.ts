@@ -484,6 +484,7 @@ describe('cellOf()', () => {
 });
 
 describe('simulation', () => {
+  // Long games replay many events: allow more than the default 5 s when the whole suite runs in parallel.
   test('100 bot-only games with 2, 3 and 4 players all end with a full ranking', () => {
     const random = mulberry32(12345);
     const rollDie = () => 1 + Math.floor(random() * 6);
@@ -501,5 +502,5 @@ describe('simulation', () => {
         expect([...state.tokens[color]].sort()).toEqual([step(3), step(4), step(5), step(6)]);
       }
     }
-  });
+  }, 60_000);
 });

@@ -75,6 +75,17 @@ functions cannot hold WebSocket connections:
 3. No sockets: short polling of `GET /api/matches/:id` (simplest, fine for a few players, more requests).
 The server-side match model from Phase 4 (actions + `replay`) is the base for rooms either way.
 
+## Phone fix (2026-10-05, after the pause note)
+The user saw a **blank page on their phone** (desktop fine; phone model/browser not known yet). Cause in our design:
+the page had no server-rendered content (the i18n provider rendered nothing until JavaScript detected the language),
+so any script failure meant a blank page. Fixed: server-side first render in the right language (`lang` cookie +
+Accept-Language), `app/error.tsx` / `app/global-error.tsx` crash screens with the technical message, `<noscript>`
+notice, no `findLast` / `Object.hasOwn` / `AbortSignal.timeout` in our code, small polyfills in
+`instrumentation-client.ts`, browserslist lowered to Safari 15 / Chrome 90, CSS fallbacks for `color-mix()` and `cqw`.
+Checked in Chrome: normal load (no hydration warnings, no CSP violations), built-ins removed to mimic an old browser
+(the game still plays), a forced render crash (the error screen shows). **Still to confirm on the user's phone**; if it
+still fails, the error screen now shows the technical message — ask for it and for the phone model and browser.
+
 ## Small open items
 - Not yet seen in a browser: the "The others are still playing for the remaining places." hint (needs the human to
   finish while 2+ bots remain); the logic is simple and the texts exist.

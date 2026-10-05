@@ -221,7 +221,12 @@ export function Game() {
     update(createGame({ players: seatsFor(opponents) }));
   }
 
-  const lastRoll = state.events.findLast((e) => e.type === 'rolled');
+  // A loop instead of Array.prototype.findLast, which older phone browsers lack.
+  let lastRoll: Extract<GameState['events'][number], { type: 'rolled' }> | undefined;
+  for (let i = state.events.length - 1; i >= 0 && !lastRoll; i--) {
+    const event = state.events[i]!;
+    if (event.type === 'rolled') lastRoll = event;
+  }
 
   let turnText: string;
   let hintText: string;

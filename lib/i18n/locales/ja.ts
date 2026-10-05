@@ -5,6 +5,12 @@ const ja: Locale = {
   app: {
     title: 'ルドー',
   },
+  crash: {
+    title: 'このブラウザではゲームを実行できませんでした',
+    message: '最新のSafariまたはChromeで開いてください。チャットアプリから開いた場合は「ブラウザで開く」を選んでください。',
+    retry: '再試行',
+    noScript: 'このゲームにはJavaScriptが必要です。JavaScriptを有効にするか、最新のSafariまたはChromeで開いてください。',
+  },
   lang: {
     label: '言語',
   },

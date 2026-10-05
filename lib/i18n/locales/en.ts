@@ -4,6 +4,12 @@ const en = {
   app: {
     title: 'Ludo',
   },
+  crash: {
+    title: 'This browser couldn\'t run the game',
+    message: 'Please open the game in an up-to-date Safari or Chrome. If you opened it from a chat app, choose “Open in browser”.',
+    retry: 'Try again',
+    noScript: 'This game needs JavaScript. Please turn it on, or open the game in an up-to-date Safari or Chrome.',
+  },
   lang: {
     label: 'Language',
   },

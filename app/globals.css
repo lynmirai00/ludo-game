@@ -242,7 +242,16 @@ body {
   width: 84%;
   aspect-ratio: 1;
   border-radius: 50%;
+  /* Fallback first: browsers without color-mix() keep the plain color. */
+  background: var(--c);
+  opacity: 0.7;
   background: color-mix(in srgb, var(--c) 62%, white);
+}
+
+@supports (background: color-mix(in srgb, red 50%, white)) {
+  .cell--track::before {
+    opacity: 1;
+  }
 }
 
 /* Start cells: full color with a white arrow in the direction of movement. */
@@ -253,7 +262,8 @@ body {
 .cell--start::after {
   content: "➜";
   color: white;
-  font-size: 3.6cqw;
+  font-size: 2.2vw;
+  font-size: min(3.6cqw, 22px);
   font-weight: 700;
 }
 
@@ -265,15 +275,19 @@ body {
 .cell--home {
   margin: 8%;
   border-radius: 3px;
+  background: #eee;
   background: color-mix(in srgb, var(--c) 40%, white);
   color: rgb(0 0 0 / 0.55);
-  font-size: 3.6cqw;
+  font-size: 2.2vw;
+  font-size: min(3.6cqw, 22px);
   font-weight: 700;
 }
 
 .base {
   margin: 4%;
+  background: #f6f6f6;
   background: color-mix(in srgb, var(--c) 28%, white);
+  border: 6px solid var(--c);
   border: 1.6cqw solid var(--c);
   border-radius: 2px;
 }
@@ -664,4 +678,26 @@ body {
 .privacy .hint {
   margin: 0;
   font-size: 0.85rem;
+}
+
+/* ---- Crash screen and no-JavaScript notice ------------------------------ */
+
+.crash {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.crash-detail {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.crash-banner {
+  margin: 0;
+  padding: 12px var(--gutter);
+  background: #fff3cd;
+  border-bottom: 1px solid var(--border);
 }

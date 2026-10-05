@@ -36,8 +36,15 @@ export function createUserManager({ zitadelUrl, clientId }: PublicConfig): UserM
 /** True when ZITADEL answers within a few seconds; otherwise the game runs as guest only. */
 export async function isReachable(zitadelUrl: string): Promise<boolean> {
   try {
-    const response = await fetch(`${zitadelUrl}/.well-known/openid-configuration`, { signal: AbortSignal.timeout(4000) });
-    return response.ok;
+    // AbortController + setTimeout rather than AbortSignal.timeout, which older phone browsers lack.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    try {
+      const response = await fetch(`${zitadelUrl}/.well-known/openid-configuration`, { signal: controller.signal });
+      return response.ok;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch {
     return false;
   }

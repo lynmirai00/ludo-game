@@ -5,6 +5,12 @@ const vi: Locale = {
   app: {
     title: 'Cờ cá ngựa',
   },
+  crash: {
+    title: 'Trình duyệt này không chạy được game',
+    message: 'Hãy mở game bằng Safari hoặc Chrome bản mới. Nếu bạn mở từ ứng dụng chat, hãy chọn “Mở bằng trình duyệt”.',
+    retry: 'Thử lại',
+    noScript: 'Game cần JavaScript. Hãy bật JavaScript, hoặc mở game bằng Safari hoặc Chrome bản mới.',
+  },
   lang: {
     label: 'Ngôn ngữ',
   },
