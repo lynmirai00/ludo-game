@@ -109,7 +109,13 @@ The tables are created automatically on the first request.
    - **Role Assignments**: give your own account the `admin` role.
 3. Login settings (instance or organization): keep **email verification** on for self-registration.
    If fake accounts appear, turn on a captcha or turn self-registration off.
-4. ZITADEL Cloud sends emails with its own default provider; you can add your own SMTP provider later.
+4. **Emails:** a new ZITADEL Cloud instance has **no SMTP provider**, so it sends no verification codes until you
+   add one (Default Settings → **SMTP Provider**). For example **Brevo** (free: 300 emails a day):
+   - In Brevo, add and verify a **sender** address (Settings → Senders, domains, IPs → Senders), and create an
+     **SMTP key** (Settings → SMTP & API → SMTP). The key is a secret.
+   - In ZITADEL, pick the **Brevo** preset: host `smtp-relay.brevo.com:465` with TLS on (the preset may still say
+     `smtp-relay.sendinblue.com`, Brevo's old name), user = the Brevo SMTP login (`...@smtp-brevo.com`),
+     password = the SMTP key, sender = the verified address, sender name `Ludo`. Save, **Activate**, send a test.
 5. Copy the application's **Client ID**.
 
 ### 3. App: Vercel

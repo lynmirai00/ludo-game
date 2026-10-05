@@ -13,7 +13,7 @@ Last updated: 2026-10-05 (after the switch to Vietnamese rules). Read this first
 | Phase 3: ZITADEL login and saved results | ✅ Done: real login and a saved result confirmed (2026-10-05) |
 | Phase 4: anti-cheat, replay, resume after reload | ✅ Done (2026-10-05) |
 | Phase 5: admin role | ✅ Done: tried by the user with a real admin and a normal account (2026-10-05) |
-| Phase 6: deploy to Vercel (with the security checklist) | 🟡 Code part done (2026-10-05); **waiting for the user to create the Turso, ZITADEL Cloud and Vercel accounts** (README "Deploying to Vercel") |
+| Phase 6: deploy to Vercel (with the security checklist) | ✅ Done: live at https://ludo-ludo-game.vercel.app (2026-10-05) |
 | Phase 7 (optional): online multiplayer | Not started |
 
 Vietnamese rules checks: `npm test` 73/73 (rule tests rewritten for the new rules; 6 rule mutations each caught by a test),
@@ -36,6 +36,18 @@ server log prints `Rejected access token: <reason>`.
 Local setup: ZITADEL v4.19.4 via Docker on http://localhost:8080; `.env.local` has the user's CLIENT_ID.
 
 A real game finished while logged in was saved (1 row in `games`, no token rejected), so Phase 3 is complete.
+
+## Phase 6 (done 2026-10-05)
+Live at **https://ludo-ludo-game.vercel.app** (Vercel, function region hnd1 Tokyo; Turso databases `ludo` for
+Production and `ludo-preview` for Preview; ZITADEL Cloud instance `https://ludo-7py3bu.us1.zitadel.cloud`, which
+uses its hosted Login V2; emails through Brevo SMTP). Checked from here: security headers and nonce CSP, no CSP
+violations while playing and logging in, API 401s without a token, no CORS headers, `/api/games` gone, redirect URI
+accepted (a wrong one rejected), Turso reachable. The user tried registration with email, a saved game and the
+admin role on the live site.
+Gotchas: a new ZITADEL Cloud instance has no SMTP provider (no emails at all until one is added); Vercel's
+Node.js setting moved, but `engines.node` in package.json already selects Node 22+; the Vercel URL got a prefix
+(`ludo-ludo-game`), so the ZITADEL redirect URIs had to match it.
+Open: confirm whether the Vercel Firewall rate-limit rule for `/api` was added (depends on the plan).
 
 ## Phase 5 (done 2026-10-05)
 "Reset leaderboards" (admin only) stores `leaderboard_since` in `settings`; nothing is deleted. In ZITADEL v4 the
