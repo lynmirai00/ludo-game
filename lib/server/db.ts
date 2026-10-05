@@ -80,6 +80,8 @@ export type Db = {
   leaderboards(): Promise<Leaderboards>;
   /** Admin: from now on the leaderboards only count new games. No game data is deleted. Returns the reset time. */
   resetLeaderboards(now: Date): Promise<string>;
+  /** Privacy: deletes the player with all their games and matches. */
+  deletePlayer(id: string): Promise<void>;
   /** Starts a match, abandoning the player's oldest active ones beyond MAX_ACTIVE_MATCHES. */
   createMatch(match: { id: string; playerId: string; players: number }, now: Date): Promise<MatchRow>;
   getMatch(id: string): Promise<MatchRow | null>;
@@ -239,6 +241,19 @@ export function createDb(client: Client): Db {
         args: [since],
       });
       return since;
+    },
+
+    async deletePlayer(id) {
+      await init();
+      // Children first, because of the foreign keys; all or nothing.
+      await client.batch(
+        [
+          { sql: 'DELETE FROM games WHERE player_id = ?', args: [id] },
+          { sql: 'DELETE FROM matches WHERE player_id = ?', args: [id] },
+          { sql: 'DELETE FROM players WHERE id = ?', args: [id] },
+        ],
+        'write',
+      );
     },
 
     async createMatch({ id, playerId, players }, now) {

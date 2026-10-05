@@ -123,6 +123,13 @@ export function createHandlers({ auth, db, fetchProfile, now, rollDie, newId }: 
       return Response.json({ ...me, admin: user.roles.includes('admin') });
     }),
 
+    /** DELETE /api/me: privacy; deletes the player's game data (not their ZITADEL account). */
+    deleteMe: handle(async (request) => {
+      const user = await auth.requireUser(request);
+      await db.deletePlayer(user.id);
+      return Response.json({ deleted: true });
+    }),
+
     /** PUT /api/me/locale { locale } */
     putLocale: handle(async (request) => {
       const user = await auth.requireUser(request);

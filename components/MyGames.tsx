@@ -12,7 +12,8 @@ import { Replay } from './Replay';
 /** The logged-in player's recent results (GET /api/me/games). Hidden for guests. */
 export function MyGames() {
   const { t, lang } = useI18n();
-  const { status, call, resultsVersion } = useAuth();
+  const { status, call, resultsVersion, logout } = useAuth();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [games, setGames] = useState<GameRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [replayId, setReplayId] = useState<string | null>(null);
@@ -34,6 +35,17 @@ export function MyGames() {
   }, [status, call, resultsVersion]);
 
   if (status !== 'user') return null;
+
+  // Privacy (docs/03-plan.md, Phase 6): delete this player's game data, then log out.
+  async function deleteMyData() {
+    if (!window.confirm(t('privacy.confirmDelete'))) return;
+    try {
+      await call('/api/me', { method: 'DELETE' });
+      logout();
+    } catch (e) {
+      setDeleteError(e instanceof ApiCallError ? e.code : 'UNKNOWN');
+    }
+  }
 
   const date = new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -65,6 +77,18 @@ export function MyGames() {
           ))}
         </ol>
       )}
+      <div className="privacy">
+        <h3 className="privacy-title">{t('privacy.title')}</h3>
+        <p className="hint">{t('privacy.note')}</p>
+        <button type="button" className="btn btn--small btn--danger" onClick={() => void deleteMyData()}>
+          {t('privacy.delete')}
+        </button>
+        {deleteError && (
+          <p className="hint" role="alert">
+            {t(errorKey(deleteError))}
+          </p>
+        )}
+      </div>
       {replayId && <Replay matchId={replayId} onClose={() => setReplayId(null)} />}
     </section>
   );

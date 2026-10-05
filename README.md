@@ -86,6 +86,57 @@ Custom login texts cannot add a language ZITADEL does not support.
 - **"Can't reach the login server":** ZITADEL is not running or not reachable at `ZITADEL_URL`.
   The game still works as a guest.
 
+## Deploying to Vercel
+Vercel hosts only the Next.js app. The login server (ZITADEL Cloud) and the database (Turso) live elsewhere;
+all three have free plans. Do the steps in this order, because each one needs a value from the previous one.
+
+### 1. Database: Turso
+1. Sign up at https://turso.tech and create a database, e.g. `ludo` (pick a region close to your Vercel region).
+2. Copy its URL (`libsql://ludo-<you>.turso.io`) and create a **database token** with read and write access.
+3. Create a second database, e.g. `ludo-preview`, with its own token, for Vercel preview deployments.
+   Preview builds must never write to the production data.
+
+The tables are created automatically on the first request.
+
+### 2. Login: ZITADEL Cloud
+1. Sign up at https://zitadel.com and create an instance. Its URL looks like `https://ludo-xxxxxx.zitadel.cloud`.
+2. In its Console, repeat the local setup with production values:
+   - Project `Ludo`; role `admin`; in the project's **General** settings turn on
+     **Return user roles during authentication** (leave "Only authorized users can authenticate" off).
+   - Application `ludo-web`: **User Agent**, **PKCE**, Redirect URI and Post Logout URI exactly
+     `https://<your-app>.vercel.app/` (no wildcards, no preview URLs), **Development Mode off**.
+   - The application's **Token Settings**: Auth Token Type **JWT**, and **Add user roles to the access token** on.
+   - **Role Assignments**: give your own account the `admin` role.
+3. Login settings (instance or organization): keep **email verification** on for self-registration.
+   If fake accounts appear, turn on a captcha or turn self-registration off.
+4. ZITADEL Cloud sends emails with its own default provider; you can add your own SMTP provider later.
+5. Copy the application's **Client ID**.
+
+### 3. App: Vercel
+1. Sign up at https://vercel.com and **import** the GitHub repository. Vercel detects Next.js; keep the defaults.
+   Use Node.js 22 or newer (Project Settings → General).
+2. **Environment variables** (Project Settings → Environment Variables):
+
+   | Name | Production | Preview |
+   |---|---|---|
+   | `ZITADEL_URL` | `https://ludo-xxxxxx.zitadel.cloud` (no trailing slash) | same |
+   | `CLIENT_ID` | the Client ID from step 2 | same |
+   | `DATABASE_URL` | `libsql://ludo-...turso.io` | `libsql://ludo-preview-...turso.io` |
+   | `DATABASE_AUTH_TOKEN` | the `ludo` token, marked **Sensitive** | the `ludo-preview` token, **Sensitive** |
+
+   On Vercel the server refuses to start with a local SQLite `DATABASE_URL` or an `http://` ZITADEL URL.
+   Login only works on the production URL (the one registered in ZITADEL); previews can be played as a guest.
+3. **Firewall** (Project → Firewall): add a rate-limit rule for paths starting with `/api`
+   (for example 60 requests per minute per IP), if your plan offers it.
+4. Deploy, then open `https://<your-app>.vercel.app/`.
+
+### 4. Check before sharing the link
+- Play as a guest; log in; finish a game and see it in "My games" and the leaderboards.
+- Log in with an account without the `admin` role: no "Reset leaderboards" button.
+- The response headers of the page include `Content-Security-Policy`, `X-Frame-Options: DENY` and
+  `X-Content-Type-Options: nosniff` (browser devtools → Network).
+- The full list is the "Security checklist" in Phase 6 of [`docs/03-plan.md`](docs/03-plan.md).
+
 ## Project layout
 See "Target folder structure" in [`CLAUDE.md`](CLAUDE.md). In short: pure game rules in `lib/game.ts`,
 React components in `components/`, API route handlers in `app/api/`, server-only code in `lib/server/`,

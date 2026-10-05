@@ -88,6 +88,12 @@ const vi: Locale = {
     position: 'Bước {current}/{total}',
     close: 'Quay lại ván chơi',
   },
+  privacy: {
+    title: 'Dữ liệu của bạn',
+    note: 'Game lưu mã người chơi từ dịch vụ đăng nhập, tên hiển thị, ngôn ngữ và kết quả các ván của bạn. Game không bao giờ lưu email hay mật khẩu của bạn.',
+    delete: 'Xóa dữ liệu của tôi',
+    confirmDelete: 'Xóa kết quả, lịch sử và các ván đã lưu của bạn khỏi game? Tài khoản đăng nhập của bạn không bị xóa. Không thể hoàn tác.',
+  },
   history: {
     title: 'Lịch sử của tôi',
     empty: 'Chưa có ván nào. Hãy chơi hết một ván khi đã đăng nhập.',

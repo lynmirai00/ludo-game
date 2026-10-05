@@ -88,6 +88,12 @@ const en = {
     position: 'Step {current} of {total}',
     close: 'Back to the game',
   },
+  privacy: {
+    title: 'Your data',
+    note: 'This game stores your player ID from the login service, your display name, your language and your game results. It never stores your email address or password.',
+    delete: 'Delete my data',
+    confirmDelete: 'Delete your results, history and saved games from this game? Your login account is not deleted. This cannot be undone.',
+  },
   history: {
     title: 'My games',
     empty: 'No games yet. Finish a game while logged in to see it here.',

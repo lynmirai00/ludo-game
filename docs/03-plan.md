@@ -76,6 +76,9 @@ Follow "Deployment to Vercel" in `docs/02-zitadel.md`.
   three languages about what is stored (player ID, display name, language, game results).
 
 Security checklist (all must be done before the deployed app is shared publicly):
+(Done in code on 2026-10-05: Phase 4, no emails in names, security headers with a nonce-based CSP in `proxy.ts`,
+no CORS headers, `npm audit` clean, `DELETE /api/me`, and a startup check that refuses a local database or an
+http ZITADEL on Vercel. The remaining items are settings in ZITADEL Cloud and Vercel; see "Deploying to Vercel" in the README.)
 - Phase 4 is done: before it, any logged-in user can post a fake result and top both leaderboards.
 - Names: the leaderboards never show an email address (see "Display name" in `docs/02-zitadel.md`).
 - ZITADEL Cloud: Development Mode off; Redirect and Post Logout URIs list only the exact production URL (no wildcards,

@@ -5,3 +5,7 @@ export const dynamic = 'force-dynamic';
 export function GET(request: Request) {
   return api().getMe(request);
 }
+
+export function DELETE(request: Request) {
+  return api().deleteMe(request);
+}

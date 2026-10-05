@@ -484,6 +484,36 @@ describe('GET /api/leaderboard', () => {
   });
 });
 
+describe('privacy: DELETE /api/me', () => {
+  test('needs a token', async () => {
+    expect((await api.deleteMe(request('/api/me', { method: 'DELETE' }))).status).toBe(401);
+  });
+
+  test("deletes the player's results, history and matches, and nobody else's", async () => {
+    const alice = await token({ sub: 'alice' });
+    const bob = await token({ sub: 'bob' });
+    profiles['alice'] = { name: 'Alice' };
+    profiles['bob'] = { name: 'Bob' };
+    await saveGame(alice, { place: 1, players: 2, rolls: 30 });
+    await saveGame(bob, { place: 1, players: 2, rolls: 35 });
+    const created = await api.createMatch(request('/api/matches', { method: 'POST', bearer: alice, body: { players: 2 } }));
+    const { id } = (await created.json()) as MatchView;
+
+    const res = await api.deleteMe(request('/api/me', { method: 'DELETE', bearer: alice }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ deleted: true });
+
+    expect(await db.getMatch(id)).toBeNull();
+    expect((await api.getLeaderboard(request('/api/leaderboard')).then((r) => r.json())).mostWins).toEqual([
+      { name: 'Bob', wins: 1, games: 1 },
+    ]);
+    expect(await me(bob)).toMatchObject({ wins: 1, games: 1 });
+    // Logging in again starts from scratch.
+    expect(await me(alice)).toMatchObject({ wins: 0, games: 0, locale: null });
+    expect(await (await api.getMyGames(request('/api/me/games', { bearer: alice }))).json()).toEqual([]);
+  });
+});
+
 describe('admin: DELETE /api/leaderboard', () => {
   const adminToken = (sub = 'boss') => token({ sub, claims: { [ROLES_CLAIM]: { admin: { org1: 'example.com' } } } });
   const reset = (bearer?: string) => api.resetLeaderboards(request('/api/leaderboard', { method: 'DELETE', bearer }));
@@ -563,6 +593,16 @@ describe('server config', () => {
       databaseUrl: 'file:./data/game.db',
       databaseAuthToken: null,
     });
+  });
+
+  test('on Vercel the server refuses a local SQLite file or an http ZITADEL', () => {
+    const vercel = { VERCEL: '1', CLIENT_ID: 'abc', ZITADEL_URL: 'https://ludo.zitadel.cloud', DATABASE_URL: 'libsql://ludo.turso.io' };
+    expect(() => validateConfig(loadConfig(vercel), vercel)).not.toThrow();
+    expect(() => validateConfig(loadConfig({ ...vercel, DATABASE_URL: '' }), vercel)).toThrow(/DATABASE_URL/);
+    expect(() => validateConfig(loadConfig({ ...vercel, DATABASE_URL: 'file:./data/game.db' }), vercel)).toThrow(/DATABASE_URL/);
+    expect(() => validateConfig(loadConfig({ ...vercel, ZITADEL_URL: 'http://zitadel.example' }), vercel)).toThrow(/https/);
+    // Locally (no VERCEL) a file and http://localhost are fine.
+    expect(() => validateConfig(loadConfig({ CLIENT_ID: 'abc' }), {})).not.toThrow();
   });
 
   test('a missing CLIENT_ID stops the server on startup with a clear message', () => {
