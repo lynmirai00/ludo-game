@@ -69,10 +69,10 @@ DATABASE_AUTH_TOKEN=
 | Method | Path | Auth required | Description |
 |---|---|---|---|
 | GET | /api/config | No | `{ zitadelUrl, clientId }` |
-| GET | /api/leaderboard | No | Top 10 by wins (games finished in 1st place); ties broken by fewer games played |
+| GET | /api/leaderboard | No | Both leaderboards in one response, see "Leaderboards" below |
 | GET | /api/me | Yes | `{ id, name, wins, games, locale }` (wins = 1st places) |
 | PUT | /api/me/locale | Yes | `{ locale }`, saves the player's language (phase 3) |
-| POST | /api/games | Yes | Record one game result `{ place, players }` (phase 3); `players` must be 2–4 and `place` 1..`players`, otherwise `400 INVALID_RESULT` |
+| POST | /api/games | Yes | Record one game result `{ place, players, rolls }` (phase 3); `players` must be 2–4, `place` 1..`players` and `rolls` an integer ≥ 1, otherwise `400 INVALID_RESULT` |
 | DELETE | /api/leaderboard | Yes, admin role | Clear the leaderboard (phase 5) |
 
 Errors are returned as `{ "error": { "code": "SOME_CODE" } }` with stable codes such as `UNAUTHORIZED`, `FORBIDDEN`, `INVALID_RESULT`, `INVALID_LOCALE`, `ILLEGAL_MOVE`, `NOT_FOUND`. The browser maps each code to a translated message (`errors.<CODE>`).
@@ -95,16 +95,37 @@ CREATE TABLE IF NOT EXISTS games (
   player_id   TEXT NOT NULL REFERENCES players(id),
   place       INTEGER NOT NULL CHECK (place BETWEEN 1 AND 4),     -- the human's finishing place
   players     INTEGER NOT NULL CHECK (players BETWEEN 2 AND 4),   -- number of players in that game
+  rolls       INTEGER NOT NULL CHECK (rolls >= 1),                -- the human's rolls until their place was decided
   finished_at TEXT NOT NULL,
   CHECK (place <= players)
 );
 CREATE INDEX IF NOT EXISTS games_player_id ON games(player_id);
+CREATE INDEX IF NOT EXISTS games_fastest ON games(players, place, rolls);
 ```
 - Turn on foreign keys for every connection (`PRAGMA foreign_keys = ON`); SQLite leaves them off by default.
 - Upsert the player (`INSERT ... ON CONFLICT(id) DO UPDATE SET name = excluded.name`) whenever a verified token
   reaches `GET /api/me`, so a name changed in ZITADEL shows up on the next login.
-The leaderboard is a GROUP BY query over `games` joined with `players`: wins = number of games with `place = 1`,
-ordered by wins (descending), then by games played (ascending), top 10.
+## Leaderboards
+There are two leaderboards, both GROUP BY queries over `games` joined with `players`:
+1. **Most wins:** wins = number of games with `place = 1`, ordered by wins (descending), then by games played
+   (ascending); top 10.
+2. **Fastest wins:** measured in **the human's own rolls** from the start of the game until they finished 1st
+   (not wall-clock time, so "Fast bots", thinking time and idle tabs do not matter). Kept **separately for 2, 3 and
+   4 players**. Each player appears once, with their best (lowest) `rolls` among their games with `place = 1`;
+   ordered by rolls (ascending), ties broken by who reached it first (`finished_at`); top 10 per player count.
+
+`GET /api/leaderboard` returns both:
+```json
+{
+  "mostWins": [{ "name": "An", "wins": 12, "games": 30 }],
+  "fastestWins": {
+    "2": [{ "name": "An", "rolls": 41, "finishedAt": "2026-10-05T09:30:00.000Z" }],
+    "3": [],
+    "4": []
+  }
+}
+```
+"Clear leaderboard" (phase 5) deletes all rows of `games`, which empties both leaderboards.
 
 ## ZITADEL setup for local development (done by the user in the Console; Claude Code only documents it in the README)
 1. `docker compose up -d`, open http://localhost:8080/ui/console, log in with `zitadel-admin@zitadel.localhost` / `Password1!`.

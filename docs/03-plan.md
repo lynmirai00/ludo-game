@@ -31,8 +31,9 @@ Done when: a full game can be played in the browser in each of the three languag
 ## Phase 3: ZITADEL login and saved results
 - `lib/auth-client.ts`, `lib/server/auth.ts`, `lib/server/db.ts`, `lib/server/errors.ts` and the API route handlers from `docs/02-zitadel.md`.
 - Top bar: when logged out, show "Log in to save your results" and a "Log in" button; when logged in, show the name, wins/games, and a "Log out" button.
-- As soon as the human's place is decided: if logged in, send `{ place, players }`; if not, add "You're not logged in, so this result wasn't saved." to the game log.
-- A "Leaderboard" panel showing the top 10.
+- As soon as the human's place is decided: if logged in, send `{ place, players, rolls }` (`rolls` = the human's own rolls in that game); if not, add "You're not logged in, so this result wasn't saved." to the game log.
+- A "Leaderboard" panel with two tabs: "Most wins" (top 10) and "Fastest wins" (fewest rolls to finish 1st,
+  with a tab each for 2, 3 and 4 players). See "Leaderboards" in `docs/02-zitadel.md`.
 - Pass `ui_locales` to ZITADEL on login; save the language to the player's profile with `PUT /api/me/locale` and restore it on login (see `docs/04-i18n.md`).
 - From this phase on, a missing `CLIENT_ID` stops the server on startup with a clear error.
 - Update the README with the local ZITADEL setup steps.
@@ -46,7 +47,7 @@ Right now the browser reports the human's place itself, so it can cheat. Change 
 - `POST /api/matches/:id/move` takes `tokenIndex`; the server validates it with `lib/game.ts`.
 - Matches are stored in the database (a `matches` table with the player's `sub` and the serialized state), never in memory:
   on Vercel each request may run on a different instance. Only the match's owner may roll or move.
-- The server records the human's place itself as soon as it is decided. Remove `POST /api/games`.
+- The server records the human's place and roll count itself as soon as the place is decided. Remove `POST /api/games`.
 - Guest games (not logged in) still run entirely in the browser as before and are not saved.
 
 Done when: it is impossible to record a win by calling the API directly without actually playing; there are tests for illegal moves and for another player's token trying to act on someone else's match.

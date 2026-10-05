@@ -90,6 +90,8 @@ The state contains at least: `players`, `tokens` (4 colors x 4 tokens), `turn`, 
 `capture { player, victimColor, victimToken }`, `step { player, token, step }` (a token reached a home step),
 `extraTurn { player }`, `finish { player, place }`.
 Export TypeScript types for the state and for each event type (a discriminated union on `type`).
+The "Fastest wins" leaderboard needs the human's roll count: count that player's `rolled` events (a helper in
+`lib/game.ts`, e.g. `rollCount(state, color)`, with a test).
 
 ## Bot (`lib/bot.ts`)
 Pick the move with the highest score:
