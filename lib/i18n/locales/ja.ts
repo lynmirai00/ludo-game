@@ -14,6 +14,9 @@ const ja: Locale = {
     opponents: '対戦相手',
     bots: { other: 'CPU {count}人' },
     log: 'ゲームの記録',
+    dice: 'サイコロ',
+    lastRoll: '出た目：{value}',
+    board: 'ゲーム盤',
   },
   turn: {
     self: 'あなたの番です',
@@ -23,6 +26,10 @@ const ja: Locale = {
     roll: '「サイコロを振る」を押してください。',
     move: '光っているコマを選んでください。',
     botThinking: '{player}が考えています…',
+    gameOver: '「新しいゲーム」を押すと、もう一度遊べます。',
+  },
+  token: {
+    label: '{color}のコマ{number}',
   },
   player: {
     bot: 'CPU（{color}）',

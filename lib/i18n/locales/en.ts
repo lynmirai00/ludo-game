@@ -13,6 +13,9 @@ const en = {
     opponents: 'Opponents',
     bots: { one: '{count} bot', other: '{count} bots' },
     log: 'Game log',
+    dice: 'Dice',
+    lastRoll: 'Last roll: {value}',
+    board: 'Game board',
   },
   turn: {
     self: 'Your turn',
@@ -22,6 +25,10 @@ const en = {
     roll: 'Press Roll to take your turn.',
     move: 'Pick a highlighted token to move.',
     botThinking: '{player} is thinking…',
+    gameOver: 'Press New game to play again.',
+  },
+  token: {
+    label: '{color} token {number}',
   },
   player: {
     bot: '{color} bot',

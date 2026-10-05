@@ -14,6 +14,9 @@ const vi: Locale = {
     opponents: 'Số đối thủ',
     bots: { other: '{count} máy' },
     log: 'Diễn biến',
+    dice: 'Xúc xắc',
+    lastRoll: 'Vừa gieo được {value}',
+    board: 'Bàn cờ',
   },
   turn: {
     self: 'Lượt của bạn',
@@ -23,6 +26,10 @@ const vi: Locale = {
     roll: 'Bấm "Gieo xúc xắc" để đi.',
     move: 'Chọn một quân đang nhấp nháy để đi.',
     botThinking: '{player} đang suy nghĩ…',
+    gameOver: 'Bấm "Ván mới" để chơi lại.',
+  },
+  token: {
+    label: 'Quân {color} số {number}',
   },
   player: {
     bot: 'Máy {color}',
